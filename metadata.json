@@ -1,0 +1,5 @@
+{
+  "name": "Servicio de Infectología \"Hospital Universitario de Caracas\"",
+  "description": "Una aplicación web para gestionar la información de los pacientes, las historias clínicas, los estudios y las estadísticas del Servicio de Infectología del \"Hospital Universitario de Caracas\". La aplicación cuenta con un sistema de triaje, gestión de la historia clínica, carga de estudios, gestión del personal médico y un panel de estadísticas detallado.",
+  "requestFramePermissions": []
+}
