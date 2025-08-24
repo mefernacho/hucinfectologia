@@ -3,7 +3,7 @@ import { Patient, EstudiosData, Inmunizacion, InmunizacionesData } from '../type
 
 interface LaboratoriosInmunizacionesProps {
   patient: Patient;
-  onSave: (updatedPatient: Patient) => void;
+  onSave: (updatedPatient: Patient) => Promise<void>;
 }
 
 export default function LaboratoriosInmunizaciones({ patient, onSave }: LaboratoriosInmunizacionesProps) {
@@ -32,9 +32,9 @@ export default function LaboratoriosInmunizaciones({ patient, onSave }: Laborato
     }));
   };
   
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedPatient = { ...patient, estudios: estudios };
-    onSave(updatedPatient);
+    await onSave(updatedPatient);
     alert('Laboratorios e inmunizaciones guardados con éxito.');
   };
 

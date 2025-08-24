@@ -1,50 +1,55 @@
 
 import React, { useState } from 'react';
+import { auth } from '../firebase';
 
-interface LoginProps {
-  onLoginSuccess: () => void;
-}
-
-export default function Login({ onLoginSuccess }: LoginProps) {
-  const [username, setUsername] = useState('');
+export default function Login() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'HUCSI' && password === 'HUCinfectologia2025') {
-      setError('');
-      onLoginSuccess();
-    } else {
-      setError('Usuario o contraseña incorrectos.');
+    setError('');
+    setIsLoading(true);
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      // onAuthStateChanged en App.tsx se encargará de la redirección y el estado.
+    } catch (err: any) {
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        setError('Correo electrónico o contraseña incorrectos.');
+      } else {
+        setError('Ocurrió un error al iniciar sesión.');
+        console.error("Firebase login error:", err);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="w-full max-w-sm mx-auto bg-gradient-radial from-brand-blue-center to-brand-blue text-white rounded-xl shadow-lg p-8 space-y-6">
-      {/* Title */}
       <div className="text-center">
         <h2 className="text-2xl font-bold text-white">Servicio de Infectología</h2>
         <p className="mt-1 text-blue-200 text-sm">"Hospital Universitario de Caracas"</p>
         <h3 className="mt-6 text-xl font-semibold text-white">Iniciar Sesión</h3>
       </div>
 
-      {/* Form */}
       <form className="space-y-4" onSubmit={handleLogin}>
         <div>
           <label
-            htmlFor="username"
+            htmlFor="email"
             className="text-sm font-bold text-blue-100 block mb-2"
           >
-            Usuario
+            Correo Electrónico
           </label>
           <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full p-3 bg-blue-900/50 border border-blue-400 rounded-lg text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-white"
-            placeholder="HUCSI"
+            placeholder="usuario@ejemplo.com"
             required
           />
         </div>
@@ -69,9 +74,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-white text-brand-blue font-bold rounded-lg hover:bg-slate-100 transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+            disabled={isLoading}
+            className="w-full py-3 px-4 bg-white text-brand-blue font-bold rounded-lg hover:bg-slate-100 transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white disabled:bg-slate-300 disabled:cursor-not-allowed"
           >
-            Acceder
+            {isLoading ? 'Accediendo...' : 'Acceder'}
           </button>
         </div>
       </form>

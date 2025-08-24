@@ -5,14 +5,14 @@ import { BriefcaseIcon } from './icons/BriefcaseIcon';
 
 interface StaffMedicoProps {
   staff: StaffMember[];
-  addStaffMember: (staffMember: StaffMember) => void;
+  addStaffMember: (staffMember: StaffMember) => Promise<void>;
 }
 
 export default function StaffMedico({ staff, addStaffMember }: StaffMedicoProps) {
   const [nombre, setNombre] = useState('');
   const [especialidad, setEspecialidad] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (nombre && especialidad) {
       const newMember: StaffMember = {
@@ -20,7 +20,7 @@ export default function StaffMedico({ staff, addStaffMember }: StaffMedicoProps)
         nombre,
         especialidad,
       };
-      addStaffMember(newMember);
+      await addStaffMember(newMember);
       setNombre('');
       setEspecialidad('');
     }

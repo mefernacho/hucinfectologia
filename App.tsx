@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { Tab, Patient, StaffMember } from './types';
 import { TABS, INITIAL_STAFF } from './constants';
 import Login from './components/Login';
@@ -16,85 +17,143 @@ import CambioTAR from './components/CambioTAR';
 import Embarazadas from './components/Embarazadas';
 import Footer from './components/Footer';
 import { PlusIcon } from './components/icons/PlusIcon';
+import { auth, db } from './firebase';
+import firebase from 'firebase/compat/app';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [user, setUser] = useState<firebase.User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<Tab>('Inicio');
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [staff, setStaff] = useState<StaffMember[]>(INITIAL_STAFF);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
-  const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-    setActiveTab('Registro');
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        setActiveTab('Registro');
+      } else {
+        setActiveTab('Inicio');
+        setPatients([]);
+        setStaff([]);
+        setSelectedPatientId(null);
+      }
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      const fetchAllData = async () => {
+        try {
+          const patientsSnapshot = await db.collection("patients").get();
+          const patientsList = patientsSnapshot.docs.map(doc => doc.data() as Patient);
+          setPatients(patientsList);
+
+          const staffCollectionRef = db.collection("staff");
+          const staffSnapshot = await staffCollectionRef.get();
+          if (staffSnapshot.empty) {
+            const batch = db.batch();
+            INITIAL_STAFF.forEach(member => {
+              const docRef = db.collection("staff").doc(member.id);
+              batch.set(docRef, member);
+            });
+            await batch.commit();
+            setStaff(INITIAL_STAFF);
+          } else {
+            const staffList = staffSnapshot.docs.map(doc => doc.data() as StaffMember);
+            setStaff(staffList);
+          }
+        } catch (error) {
+          console.error("Error fetching data: ", error);
+          alert("Error al cargar los datos desde la base de datos.");
+        }
+      };
+      fetchAllData();
+    }
+  }, [user]);
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      // El estado se limpia a través del onAuthStateChanged
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      alert("Error al cerrar sesión.");
+    }
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setActiveTab('Inicio');
-    setSelectedPatientId(null);
-  };
-
-  const addPatient = useCallback((patient: Patient) => {
-    setPatients(prev => [...prev, patient]);
-    setSelectedPatientId(patient.id);
+  const addPatient = useCallback(async (patient: Patient) => {
+    try {
+      await db.collection("patients").doc(patient.id).set(patient);
+      setPatients(prev => [...prev, patient]);
+      setSelectedPatientId(patient.id);
+    } catch (error) {
+      console.error("Error adding patient: ", error);
+      alert("Error al agregar el paciente a la base de datos.");
+      throw error;
+    }
   }, []);
   
-  const updatePatient = useCallback((updatedPatient: Patient) => {
-    setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
+  const updatePatient = useCallback(async (updatedPatient: Patient) => {
+    try {
+      await db.collection("patients").doc(updatedPatient.id).set(updatedPatient, { merge: true });
+      setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
+    } catch (error) {
+      console.error("Error updating patient: ", error);
+      alert("Error al actualizar el paciente en la base de datos.");
+      throw error;
+    }
   }, []);
 
-  const addStaffMember = useCallback((staffMember: StaffMember) => {
-    setStaff(prev => [...prev, staffMember]);
+  const addStaffMember = useCallback(async (staffMember: StaffMember) => {
+    try {
+      await db.collection("staff").doc(staffMember.id).set(staffMember);
+      setStaff(prev => [...prev, staffMember]);
+    } catch (error) {
+      console.error("Error adding staff member: ", error);
+      alert("Error al agregar al miembro del personal.");
+      throw error;
+    }
   }, []);
 
   const selectedPatient = patients.find(p => p.id === selectedPatientId) || null;
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Inicio':
-        return <Inicio />;
-      case 'Registro':
-        return <Registro patients={patients} />;
-      case 'Triaje':
-        return (
-            <Triaje 
-                patients={patients}
-                addPatient={addPatient}
-                updatePatient={updatePatient}
-                selectedPatientId={selectedPatientId}
-                setSelectedPatientId={setSelectedPatientId}
-            />
-        );
-      case 'Historia Clinica de Primera':
-        return selectedPatient ? <HistoriaClinicaPrimera patient={selectedPatient} onSave={updatePatient} staff={staff} disabled={selectedPatient.tipoConsulta !== 'Primera consulta'} /> : <NoPatientSelected />;
-      case 'Historia Clinica Sucesiva':
-        return selectedPatient ? <HistoriaClinicaSucesiva patient={selectedPatient} onSave={updatePatient} staff={staff} disabled={selectedPatient.tipoConsulta !== 'Sucesivo'} /> : <NoPatientSelected />;
-       case 'Inicio de tratamiento':
-        return selectedPatient ? <InicioTratamiento patient={selectedPatient} onSave={updatePatient} staff={staff} /> : <NoPatientSelected />;
-      case 'Cambio de TAR':
-        return selectedPatient ? <CambioTAR patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
-      case 'Embarazadas':
-        return selectedPatient ? <Embarazadas patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
-      case 'Laboratorios e Inmunizaciones':
-        return selectedPatient ? <LaboratoriosInmunizaciones patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
-      case 'Staff Médico':
-        return <StaffMedico staff={staff} addStaffMember={addStaffMember} />;
-      case 'Estadísticas':
-        return <Estadisticas patients={patients} />;
-      default:
-        return <Inicio />;
+      case 'Inicio': return <Inicio />;
+      case 'Registro': return <Registro patients={patients} />;
+      case 'Triaje': return <Triaje patients={patients} addPatient={addPatient} updatePatient={updatePatient} selectedPatientId={selectedPatientId} setSelectedPatientId={setSelectedPatientId} />;
+      case 'Historia Clinica de Primera': return selectedPatient ? <HistoriaClinicaPrimera patient={selectedPatient} onSave={updatePatient} staff={staff} disabled={selectedPatient.tipoConsulta !== 'Primera consulta'} /> : <NoPatientSelected />;
+      case 'Historia Clinica Sucesiva': return selectedPatient ? <HistoriaClinicaSucesiva patient={selectedPatient} onSave={updatePatient} staff={staff} disabled={selectedPatient.tipoConsulta !== 'Sucesivo'} /> : <NoPatientSelected />;
+      case 'Inicio de tratamiento': return selectedPatient ? <InicioTratamiento patient={selectedPatient} onSave={updatePatient} staff={staff} /> : <NoPatientSelected />;
+      case 'Cambio de TAR': return selectedPatient ? <CambioTAR patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
+      case 'Embarazadas': return selectedPatient ? <Embarazadas patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
+      case 'Laboratorios e Inmunizaciones': return selectedPatient ? <LaboratoriosInmunizaciones patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
+      case 'Staff Médico': return <StaffMedico staff={staff} addStaffMember={addStaffMember} />;
+      case 'Estadísticas': return <Estadisticas patients={patients} />;
+      default: return <Inicio />;
     }
   };
+  
+  if (isLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-brand-light-gray">
+            <p className="text-xl text-brand-gray">Cargando aplicación...</p>
+        </div>
+      );
+  }
 
   return (
     <div className="min-h-screen bg-brand-light-gray flex flex-col">
-      {isLoggedIn ? (
+      {user ? (
         <>
           <Header 
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
-            isLoggedIn={isLoggedIn}
+            isLoggedIn={!!user}
             onLogout={handleLogout}
           />
           <main className="flex-grow p-4 sm:p-6 lg:p-8">
@@ -103,7 +162,7 @@ export default function App() {
         </>
       ) : (
         <main className="flex-grow flex items-center justify-center p-4">
-          <Login onLoginSuccess={handleLoginSuccess} />
+          <Login />
         </main>
       )}
       <Footer />

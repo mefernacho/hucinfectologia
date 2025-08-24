@@ -3,7 +3,7 @@ import { Patient, HistoriaClinicaPrimera as HistoriaClinicaType, StaffMember, Fa
 
 interface HistoriaClinicaPrimeraProps {
   patient: Patient;
-  onSave: (updatedPatient: Patient) => void;
+  onSave: (updatedPatient: Patient) => Promise<void>;
   staff: StaffMember[];
   disabled: boolean;
 }
@@ -69,9 +69,9 @@ export default function HistoriaClinicaPrimera({ patient, onSave, staff, disable
       });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedPatient = { ...patient, historiaClinicaPrimera: formData };
-    onSave(updatedPatient);
+    await onSave(updatedPatient);
     alert('Historia clínica guardada con éxito.');
   };
 

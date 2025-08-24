@@ -4,7 +4,7 @@ import { DownloadIcon } from './icons/DownloadIcon';
 
 interface InicioTratamientoProps {
   patient: Patient;
-  onSave: (updatedPatient: Patient) => void;
+  onSave: (updatedPatient: Patient) => Promise<void>;
   staff: StaffMember[];
 }
 
@@ -98,9 +98,9 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
     }))
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedPatient = { ...patient, fichaInicioTratamiento: formData };
-    onSave(updatedPatient);
+    await onSave(updatedPatient);
     alert('Ficha de inicio de tratamiento guardada con éxito.');
   };
 

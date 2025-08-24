@@ -5,7 +5,7 @@ import { PlusCircleIcon } from './icons/PlusCircleIcon';
 
 interface CambioTARProps {
   patient: Patient;
-  onSave: (updatedPatient: Patient) => void;
+  onSave: (updatedPatient: Patient) => Promise<void>;
 }
 
 export default function CambioTAR({ patient, onSave }: CambioTARProps) {
@@ -13,7 +13,7 @@ export default function CambioTAR({ patient, onSave }: CambioTARProps) {
   const [notas, setNotas] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!esquema) {
       alert('Por favor, seleccione un esquema de TAR.');
       return;
@@ -28,7 +28,7 @@ export default function CambioTAR({ patient, onSave }: CambioTARProps) {
       ...patient,
       tarChanges: [newChange, ...patient.tarChanges],
     };
-    onSave(updatedPatient);
+    await onSave(updatedPatient);
     alert('Cambio de TAR guardado con éxito.');
     setEsquema('KOCITAF');
     setNotas('');

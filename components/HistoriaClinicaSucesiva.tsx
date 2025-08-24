@@ -4,7 +4,7 @@ import { PlusCircleIcon } from './icons/PlusCircleIcon';
 
 interface HistoriaClinicaSucesivaProps {
   patient: Patient;
-  onSave: (updatedPatient: Patient) => void;
+  onSave: (updatedPatient: Patient) => Promise<void>;
   staff: StaffMember[];
   disabled: boolean;
 }
@@ -64,7 +64,7 @@ export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabl
       setShowForm(true);
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newEntry: SucesivaType = {
         id: new Date().toISOString(),
         fecha: new Date().toISOString(),
@@ -74,7 +74,7 @@ export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabl
         ...patient,
         historiasClinicasSucesivas: [newEntry, ...patient.historiasClinicasSucesivas]
     };
-    onSave(updatedPatient);
+    await onSave(updatedPatient);
     alert('Historia sucesiva guardada con éxito.');
     setFormData(initialFormState);
     setShowForm(false);

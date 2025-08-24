@@ -4,7 +4,7 @@ import CoInfeccionView from './CoInfeccionView';
 
 interface EmbarazadasProps {
   patient: Patient;
-  onSave: (updatedPatient: Patient) => void;
+  onSave: (updatedPatient: Patient) => Promise<void>;
 }
 
 const initialEmbarazadaState: EmbarazadaData = {
@@ -34,9 +34,9 @@ export default function Embarazadas({ patient, onSave }: EmbarazadasProps) {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedPatient = { ...patient, embarazadaData: formData };
-    onSave(updatedPatient);
+    await onSave(updatedPatient);
     alert('Datos de embarazo guardados con éxito.');
   };
   

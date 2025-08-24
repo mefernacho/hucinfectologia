@@ -5,8 +5,8 @@ import { PlusCircleIcon } from './icons/PlusCircleIcon';
 
 interface TriajeProps {
   patients: Patient[];
-  addPatient: (patient: Patient) => void;
-  updatePatient: (patient: Patient) => void;
+  addPatient: (patient: Patient) => Promise<void>;
+  updatePatient: (patient: Patient) => Promise<void>;
   selectedPatientId: string | null;
   setSelectedPatientId: (id: string | null) => void;
 }
@@ -102,15 +102,15 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handlePatientTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handlePatientTypeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { value } = e.target;
     if (currentPatient) {
         const updatedPatient = { ...currentPatient, tipoConsulta: value as 'Primera consulta' | 'Sucesivo' };
-        updatePatient(updatedPatient);
+        await updatePatient(updatedPatient);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (patients.some(p => p.id === formData.id)) {
         alert("Error: Ya existe un paciente con esa cédula.");
@@ -171,8 +171,8 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
           inmunizaciones: initialImmunizations
       },
     };
-
-    addPatient(newPatient);
+    
+    await addPatient(newPatient);
     setFormData(initialFormState);
     setShowForm(false);
   };
