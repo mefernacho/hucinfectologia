@@ -19,10 +19,12 @@ import Footer from './components/Footer';
 import { PlusIcon } from './components/icons/PlusIcon';
 import { auth, db } from './firebase';
 import firebase from 'firebase/compat/app';
+import FirestoreErrorScreen from './components/FirestoreErrorScreen';
 
 export default function App() {
   const [user, setUser] = useState<firebase.User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [firestoreError, setFirestoreError] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('Inicio');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -39,7 +41,7 @@ export default function App() {
         setStaff([]);
         setSelectedPatientId(null);
       }
-      setIsLoading(false);
+      // No setear isLoading a false aquí, dejar que el fetch de datos lo controle
     });
     return () => unsubscribe();
   }, []);
@@ -47,7 +49,9 @@ export default function App() {
   useEffect(() => {
     if (user) {
       const fetchAllData = async () => {
+        setIsLoading(true);
         try {
+          // Intenta una operación simple para verificar la conexión
           const patientsSnapshot = await db.collection("patients").get();
           const patientsList = patientsSnapshot.docs.map(doc => doc.data() as Patient);
           setPatients(patientsList);
@@ -66,19 +70,27 @@ export default function App() {
             const staffList = staffSnapshot.docs.map(doc => doc.data() as StaffMember);
             setStaff(staffList);
           }
-        } catch (error) {
-          console.error("Error fetching data: ", error);
-          alert("Error al cargar los datos desde la base de datos.");
+          setFirestoreError(false); // Conexión exitosa
+        } catch (error: any) {
+          console.error("Firebase connection error: ", error);
+          if (error.code === 'unavailable') {
+            setFirestoreError(true);
+          } else {
+            alert("Ocurrió un error inesperado al cargar los datos desde la base de datos.");
+          }
+        } finally {
+          setIsLoading(false);
         }
       };
       fetchAllData();
+    } else {
+        setIsLoading(false);
     }
   }, [user]);
 
   const handleLogout = async () => {
     try {
       await auth.signOut();
-      // El estado se limpia a través del onAuthStateChanged
     } catch (error) {
       console.error("Error signing out: ", error);
       alert("Error al cerrar sesión.");
@@ -138,6 +150,10 @@ export default function App() {
     }
   };
   
+  if (firestoreError) {
+    return <FirestoreErrorScreen />;
+  }
+
   if (isLoading) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-brand-light-gray">

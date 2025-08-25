@@ -12,18 +12,32 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    try {
-      await auth.signInWithEmailAndPassword(email, password);
-      // onAuthStateChanged en App.tsx se encargará de la redirección y el estado.
-    } catch (err: any) {
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-        setError('Correo electrónico o contraseña incorrectos.');
-      } else {
-        setError('Ocurrió un error al iniciar sesión.');
-        console.error("Firebase login error:", err);
-      }
-    } finally {
-      setIsLoading(false);
+
+    // Credenciales del único usuario autorizado, según lo solicitado.
+    const authorizedEmail = 'hucsi@hucsi.com';
+    const authorizedPassword = 'HUCinfectologia2025';
+
+    // Se realiza la validación en el frontend contra el único usuario autorizado.
+    if (email.trim().toLowerCase() === authorizedEmail && password === authorizedPassword) {
+        try {
+            await auth.signInWithEmailAndPassword(authorizedEmail, authorizedPassword);
+            // onAuthStateChanged en App.tsx se encargará de la redirección y el estado.
+        } catch (err: any) {
+            console.error("Firebase login error:", err);
+            // Manejo de errores específico para guiar al usuario
+            if (err.code === 'auth/configuration-not-found') {
+                setError('Error de Configuración: El método de inicio de sesión por correo electrónico no está habilitado en Firebase. Siga las instrucciones en el archivo `firebaseConfig.ts`.');
+            } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                 setError('El usuario autorizado no existe en Firebase o la clave es incorrecta. Verifique que el usuario "hucsi@hucsi.com" esté creado en la sección de Authentication de Firebase.');
+            } else {
+                setError('Error de autenticación con el servidor. Contacte al administrador.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    } else {
+        setError('Usuario o clave incorrectos.');
+        setIsLoading(false);
     }
   };
 
@@ -41,16 +55,17 @@ export default function Login() {
             htmlFor="email"
             className="text-sm font-bold text-blue-100 block mb-2"
           >
-            Correo Electrónico
+            Usuario
           </label>
           <input
             id="email"
-            type="email"
+            type="text"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full p-3 bg-blue-900/50 border border-blue-400 rounded-lg text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-white"
-            placeholder="usuario@ejemplo.com"
+            placeholder="hucsi@hucsi.com"
             required
+            autoComplete="username"
           />
         </div>
         <div>
@@ -58,7 +73,7 @@ export default function Login() {
             htmlFor="password"
             className="text-sm font-bold text-blue-100 block mb-2"
           >
-            Contraseña
+            Clave
           </label>
           <input
             id="password"
@@ -68,9 +83,10 @@ export default function Login() {
             className="w-full p-3 bg-blue-900/50 border border-blue-400 rounded-lg text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-white"
             placeholder="••••••••"
             required
+            autoComplete="current-password"
           />
         </div>
-        {error && <p className="text-sm text-brand-red text-center bg-red-100 rounded py-1 px-2">{error}</p>}
+        {error && <p className="text-sm text-red-400 text-center bg-red-900/50 rounded py-1 px-2">{error}</p>}
         <div className="pt-2">
           <button
             type="submit"
