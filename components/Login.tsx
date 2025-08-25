@@ -25,7 +25,9 @@ export default function Login() {
         } catch (err: any) {
             console.error("Firebase login error:", err);
             // Manejo de errores específico para guiar al usuario
-            if (err.code === 'auth/configuration-not-found') {
+            if (err.code && err.code.includes('requests-to-this-api-identitytoolkit-method-google.cloud.identitytoolkit.v1.authenticationservice.signinwithpassword-are-blocked')) {
+                setError('Error de API: La API de autenticación está deshabilitada. Siga las instrucciones urgentes en el archivo `firebaseConfig.ts` para solucionarlo.');
+            } else if (err.code === 'auth/configuration-not-found') {
                 setError('Error de Configuración: El método de inicio de sesión por correo electrónico no está habilitado en Firebase. Siga las instrucciones en el archivo `firebaseConfig.ts`.');
             } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
                  setError('El usuario autorizado no existe en Firebase o la clave es incorrecta. Verifique que el usuario "hucsi@hucsi.com" esté creado en la sección de Authentication de Firebase.');
