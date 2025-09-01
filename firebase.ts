@@ -1,16 +1,16 @@
-
 import firebase from 'firebase/compat/app';
-import 'firebase/compat/firestore';
 import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
 import { firebaseConfig } from "./firebaseConfig";
 
-// Inicializa Firebase con la configuración
+// Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Obtiene una referencia al servicio de la base de datos Firestore
-export const db = firebase.firestore();
+// Get instances of the services
+const app = firebase.app();
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-// Obtiene una referencia al servicio de autenticación
-export const auth = firebase.auth();
+export { app, auth, db };

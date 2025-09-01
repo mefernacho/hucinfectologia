@@ -249,4 +249,4 @@ export interface ChatMessage {
     parts: { text: string }[];
 }
 
-export type Tab = 'Inicio' | 'Registro' | 'Triaje' | 'Historia Clinica de Primera' | 'Historia Clinica Sucesiva' | 'Inicio de tratamiento' | 'Cambio de TAR' | 'Embarazadas' | 'Laboratorios e Inmunizaciones' | 'Staff Médico' | 'Estadísticas';
+export type Tab = 'Inicio' | 'Registro' | 'Triaje' | 'Historia Clinica de Primera' | 'Historia Clinica Sucesiva' | 'Inicio de tratamiento' | 'Cambio de TAR' | 'Embarazadas' | 'Laboratorios e Inmunizaciones' | 'Chat' | 'Staff Médico' | 'Estadísticas';

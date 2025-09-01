@@ -1,8 +1,11 @@
-
 import React, { useState } from 'react';
 import { auth } from '../firebase';
 
-export default function Login() {
+interface LoginProps {
+  setSetupError: (error: 'auth' | 'firestore' | null) => void;
+}
+
+export default function Login({ setSetupError }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -12,33 +15,23 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
-    // Credenciales del único usuario autorizado, según lo solicitado.
-    const authorizedEmail = 'hucsi@hucsi.com';
-    const authorizedPassword = 'HUCinfectologia2025';
-
-    // Se realiza la validación en el frontend contra el único usuario autorizado.
-    if (email.trim().toLowerCase() === authorizedEmail && password === authorizedPassword) {
-        try {
-            await auth.signInWithEmailAndPassword(authorizedEmail, authorizedPassword);
-            // onAuthStateChanged en App.tsx se encargará de la redirección y el estado.
-        } catch (err: any) {
-            console.error("Firebase login error:", err);
-            // Manejo de errores específico para guiar al usuario
-            if (err.code && err.code.includes('requests-to-this-api-identitytoolkit-method-google.cloud.identitytoolkit.v1.authenticationservice.signinwithpassword-are-blocked')) {
-                setError('Error de API: La API de autenticación está deshabilitada. Siga las instrucciones urgentes en el archivo `firebaseConfig.ts` para solucionarlo.');
-            } else if (err.code === 'auth/configuration-not-found') {
-                setError('Error de Configuración: El método de inicio de sesión por correo electrónico no está habilitado en Firebase. Siga las instrucciones en el archivo `firebaseConfig.ts`.');
-            } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-                 setError('El usuario autorizado no existe en Firebase o la clave es incorrecta. Verifique que el usuario "hucsi@hucsi.com" esté creado en la sección de Authentication de Firebase.');
-            } else {
-                setError('Error de autenticación con el servidor. Contacte al administrador.');
-            }
-        } finally {
-            setIsLoading(false);
+    
+    try {
+        await auth.signInWithEmailAndPassword(email, password);
+        // onAuthStateChanged en App.tsx se encargará de la redirección y el estado.
+    } catch (err: any) {
+        console.error("Firebase login error:", err);
+        // Manejo de errores específico para guiar al usuario
+        if (err.code && (err.code.includes('identitytoolkit') || err.code === 'auth/network-request-failed')) {
+            setSetupError('auth');
+        } else if (err.code === 'auth/operation-not-allowed') {
+            setSetupError('auth');
+        } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+              setError('Usuario o clave incorrectos. Verifique que el usuario esté creado en la sección de Authentication de Firebase.');
+        } else {
+            setError('Error de autenticación con el servidor. Contacte al administrador.');
         }
-    } else {
-        setError('Usuario o clave incorrectos.');
+    } finally {
         setIsLoading(false);
     }
   };
@@ -61,13 +54,13 @@ export default function Login() {
           </label>
           <input
             id="email"
-            type="text"
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full p-3 bg-blue-900/50 border border-blue-400 rounded-lg text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-white"
-            placeholder="hucsi@hucsi.com"
+            placeholder="usuario@dominio.com"
             required
-            autoComplete="username"
+            autoComplete="email"
           />
         </div>
         <div>

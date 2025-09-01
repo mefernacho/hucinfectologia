@@ -10,6 +10,7 @@ export const TABS: Tab[] = [
     'Cambio de TAR',
     'Embarazadas',
     'Laboratorios e Inmunizaciones', 
+    'Chat',
     'Staff Médico', 
     'Estadísticas',
 ];

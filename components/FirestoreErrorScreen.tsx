@@ -1,6 +1,9 @@
 import React from 'react';
+import { firebaseConfig } from '../firebaseConfig';
 
 export default function FirestoreErrorScreen() {
+  const { projectId } = firebaseConfig;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
       <div className="w-full max-w-3xl bg-white rounded-lg shadow-2xl p-8 border-4 border-red-500">
@@ -26,7 +29,7 @@ export default function FirestoreErrorScreen() {
                 <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
                   https://console.firebase.google.com/
                 </a>
-                <p className="text-sm text-slate-500">Selecciona tu proyecto: <span className="font-mono bg-slate-100 p-1 rounded">gen-lang-client-0017427264</span></p>
+                <p className="text-sm text-slate-500">Selecciona tu proyecto: <span className="font-mono bg-slate-100 p-1 rounded">{projectId}</span></p>
               </div>
             </li>
             <li>

@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Tab, Patient, StaffMember } from './types';
 import { TABS, INITIAL_STAFF } from './constants';
@@ -16,15 +15,15 @@ import InicioTratamiento from './components/InicioTratamiento';
 import CambioTAR from './components/CambioTAR';
 import Embarazadas from './components/Embarazadas';
 import Footer from './components/Footer';
+import ChatComponent from './components/Chat';
 import { PlusIcon } from './components/icons/PlusIcon';
 import { auth, db } from './firebase';
-import firebase from 'firebase/compat/app';
-import FirestoreErrorScreen from './components/FirestoreErrorScreen';
+import FirebaseSetupGuide from './components/FirebaseSetupGuide';
 
 export default function App() {
-  const [user, setUser] = useState<firebase.User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [firestoreError, setFirestoreError] = useState(false);
+  const [setupError, setSetupError] = useState<'auth' | 'firestore' | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('Inicio');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -41,7 +40,6 @@ export default function App() {
         setStaff([]);
         setSelectedPatientId(null);
       }
-      // No setear isLoading a false aquí, dejar que el fetch de datos lo controle
     });
     return () => unsubscribe();
   }, []);
@@ -51,8 +49,8 @@ export default function App() {
       const fetchAllData = async () => {
         setIsLoading(true);
         try {
-          // Intenta una operación simple para verificar la conexión
-          const patientsSnapshot = await db.collection("patients").get();
+          const patientsCollectionRef = db.collection("patients");
+          const patientsSnapshot = await patientsCollectionRef.get();
           const patientsList = patientsSnapshot.docs.map(doc => doc.data() as Patient);
           setPatients(patientsList);
 
@@ -70,11 +68,11 @@ export default function App() {
             const staffList = staffSnapshot.docs.map(doc => doc.data() as StaffMember);
             setStaff(staffList);
           }
-          setFirestoreError(false); // Conexión exitosa
+          setSetupError(null); // Conexión exitosa
         } catch (error: any) {
           console.error("Firebase connection error: ", error);
-          if (error.code === 'unavailable') {
-            setFirestoreError(true);
+          if (error.code === 'unavailable' || error.code === 'failed-precondition' || error.code === 'permission-denied') {
+            setSetupError('firestore');
           } else {
             alert("Ocurrió un error inesperado al cargar los datos desde la base de datos.");
           }
@@ -144,16 +142,13 @@ export default function App() {
       case 'Cambio de TAR': return selectedPatient ? <CambioTAR patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
       case 'Embarazadas': return selectedPatient ? <Embarazadas patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
       case 'Laboratorios e Inmunizaciones': return selectedPatient ? <LaboratoriosInmunizaciones patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
+      case 'Chat': return <ChatComponent />;
       case 'Staff Médico': return <StaffMedico staff={staff} addStaffMember={addStaffMember} />;
       case 'Estadísticas': return <Estadisticas patients={patients} />;
       default: return <Inicio />;
     }
   };
   
-  if (firestoreError) {
-    return <FirestoreErrorScreen />;
-  }
-
   if (isLoading) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-brand-light-gray">
@@ -164,6 +159,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-brand-light-gray flex flex-col">
+      {setupError && <FirebaseSetupGuide errorType={setupError} onClose={() => setSetupError(null)} />}
+      
       {user ? (
         <>
           <Header 
@@ -178,7 +175,7 @@ export default function App() {
         </>
       ) : (
         <main className="flex-grow flex items-center justify-center p-4">
-          <Login />
+          <Login setSetupError={setSetupError} />
         </main>
       )}
       <Footer />
