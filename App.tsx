@@ -17,12 +17,14 @@ import CambioTAR from './components/CambioTAR';
 import Embarazadas from './components/Embarazadas';
 import Footer from './components/Footer';
 import { PlusIcon } from './components/icons/PlusIcon';
-import { auth, db } from './firebase';
-import firebase from 'firebase/compat/app';
+import { auth, firestore } from './firebase';
+import { User, onAuthStateChanged } from 'firebase/auth';
+import { collection, getDocs, doc, setDoc, getDoc, writeBatch } from "firebase/firestore";
 import FirestoreErrorScreen from './components/FirestoreErrorScreen';
 
+
 export default function App() {
-  const [user, setUser] = useState<firebase.User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [firestoreError, setFirestoreError] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('Inicio');
@@ -31,7 +33,7 @@ export default function App() {
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         setActiveTab('Registro');
@@ -41,7 +43,6 @@ export default function App() {
         setStaff([]);
         setSelectedPatientId(null);
       }
-      // No setear isLoading a false aquí, dejar que el fetch de datos lo controle
     });
     return () => unsubscribe();
   }, []);
@@ -51,17 +52,16 @@ export default function App() {
       const fetchAllData = async () => {
         setIsLoading(true);
         try {
-          // Intenta una operación simple para verificar la conexión
-          const patientsSnapshot = await db.collection("patients").get();
+          const patientsSnapshot = await getDocs(collection(firestore, "patients"));
           const patientsList = patientsSnapshot.docs.map(doc => doc.data() as Patient);
           setPatients(patientsList);
 
-          const staffCollectionRef = db.collection("staff");
-          const staffSnapshot = await staffCollectionRef.get();
+          const staffCollectionRef = collection(firestore, "staff");
+          const staffSnapshot = await getDocs(staffCollectionRef);
           if (staffSnapshot.empty) {
-            const batch = db.batch();
+            const batch = writeBatch(firestore);
             INITIAL_STAFF.forEach(member => {
-              const docRef = db.collection("staff").doc(member.id);
+              const docRef = doc(firestore, "staff", member.id);
               batch.set(docRef, member);
             });
             await batch.commit();
@@ -70,7 +70,7 @@ export default function App() {
             const staffList = staffSnapshot.docs.map(doc => doc.data() as StaffMember);
             setStaff(staffList);
           }
-          setFirestoreError(false); // Conexión exitosa
+          setFirestoreError(false);
         } catch (error: any) {
           console.error("Firebase connection error: ", error);
           if (error.code === 'unavailable') {
@@ -84,7 +84,7 @@ export default function App() {
       };
       fetchAllData();
     } else {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -99,7 +99,7 @@ export default function App() {
 
   const addPatient = useCallback(async (patient: Patient) => {
     try {
-      await db.collection("patients").doc(patient.id).set(patient);
+      await setDoc(doc(firestore, "patients", patient.id), patient);
       setPatients(prev => [...prev, patient]);
       setSelectedPatientId(patient.id);
     } catch (error) {
@@ -111,7 +111,7 @@ export default function App() {
   
   const updatePatient = useCallback(async (updatedPatient: Patient) => {
     try {
-      await db.collection("patients").doc(updatedPatient.id).set(updatedPatient, { merge: true });
+      await setDoc(doc(firestore, "patients", updatedPatient.id), updatedPatient, { merge: true });
       setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
     } catch (error) {
       console.error("Error updating patient: ", error);
@@ -122,7 +122,7 @@ export default function App() {
 
   const addStaffMember = useCallback(async (staffMember: StaffMember) => {
     try {
-      await db.collection("staff").doc(staffMember.id).set(staffMember);
+      await setDoc(doc(firestore, "staff", staffMember.id), staffMember);
       setStaff(prev => [...prev, staffMember]);
     } catch (error) {
       console.error("Error adding staff member: ", error);

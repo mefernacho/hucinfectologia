@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { auth } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -20,7 +21,7 @@ export default function Login() {
     // Se realiza la validación en el frontend contra el único usuario autorizado.
     if (email.trim().toLowerCase() === authorizedEmail && password === authorizedPassword) {
         try {
-            await auth.signInWithEmailAndPassword(authorizedEmail, authorizedPassword);
+            await signInWithEmailAndPassword(auth, authorizedEmail, authorizedPassword);
             // onAuthStateChanged en App.tsx se encargará de la redirección y el estado.
         } catch (err: any) {
             console.error("Firebase login error:", err);
