@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Patient, HistoriaClinicaSucesiva, TriageData, FactoresRiesgoData, FichaInicioTratamientoData } from '../../core/types';
+import { Patient, HistoriaClinicaSucesiva, TriageData, FactoresRiesgoData, FichaInicioTratamientoData } from '../core/types';
 import CoInfeccionView from './CoInfeccionView';
 import { DownloadIcon } from './icons/DownloadIcon';
 

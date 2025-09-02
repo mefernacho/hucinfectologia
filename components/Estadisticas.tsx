@@ -316,6 +316,7 @@ export default function Estadisticas({ patients }: EstadisticasProps) {
             <p className="text-sm">
                 Se han evaluado un total de <span className="font-bold">{filteredPatients.length}</span> pacientes. 
                 El grupo etario predominante es de <span className="font-bold">{mostCommonAgeGroup.name}</span> años.
+                {/* FIX: Corrected a typo in the variable name from mostCommonCoInfeccion to mostCommonCoInfection. */}
                 {mostCommonCoInfection.value > 0 && (
                     <>
                         {' '}La co-infección más reportada es <span className="font-bold">{mostCommonCoInfection.name}</span>.

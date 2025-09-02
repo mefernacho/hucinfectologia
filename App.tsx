@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { Tab, Patient, StaffMember } from './core/types';
-import { TABS, INITIAL_STAFF } from './core/constants';
+import { TABS } from './core/constants';
 import Login from './components/Login';
 import Header from './components/Header';
 import Inicio from './components/Inicio';
@@ -18,121 +18,65 @@ import Embarazadas from './components/Embarazadas';
 import Footer from './components/Footer';
 import ChatComponent from './components/Chat';
 import { PlusIcon } from './components/icons/PlusIcon';
-import { auth, db } from './firebase';
-import AuthApiErrorScreen from './components/AuthApiErrorScreen';
-import FirestoreErrorScreen from './components/FirestoreErrorScreen';
 
 export default function App() {
   const [user, setUser] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [setupError, setSetupError] = useState<'auth' | 'firestore' | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false); // No longer loading from Firebase on init
   const [activeTab, setActiveTab] = useState<Tab>('Inicio');
   const [patients, setPatients] = useState<Patient[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        setActiveTab('Registro');
-      } else {
-        setActiveTab('Inicio');
-        setPatients([]);
-        setStaff([]);
-        setSelectedPatientId(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
+  // When user logs in, we will fetch data from our new API
   useEffect(() => {
     if (user) {
-      const fetchAllData = async () => {
-        setIsLoading(true);
-        try {
-          const patientsCollectionRef = db.collection("patients");
-          const patientsSnapshot = await patientsCollectionRef.get();
-          const patientsList = patientsSnapshot.docs.map(doc => doc.data() as Patient);
-          setPatients(patientsList);
-
-          const staffCollectionRef = db.collection("staff");
-          const staffSnapshot = await staffCollectionRef.get();
-          if (staffSnapshot.empty) {
-            const batch = db.batch();
-            INITIAL_STAFF.forEach(member => {
-              const docRef = db.collection("staff").doc(member.id);
-              batch.set(docRef, member);
-            });
-            await batch.commit();
-            setStaff(INITIAL_STAFF);
-          } else {
-            const staffList = staffSnapshot.docs.map(doc => doc.data() as StaffMember);
-            setStaff(staffList);
-          }
-          setSetupError(null); // Conexión exitosa
-        } catch (error: any) {
-          console.error("Firebase connection error during initial data load: ", error);
-          // Cualquier error durante la carga inicial de datos se considera un problema de configuración de Firestore.
-          // Los errores de autenticación se detectan por separado en el componente de Login.
-          setSetupError('firestore');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchAllData();
+      setActiveTab('Registro');
+      // TODO: Fetch initial data from backend API
+      // Example:
+      // const fetchAllData = async () => {
+      //   setIsLoading(true);
+      //   try {
+      //     const patientsRes = await fetch('/api/patients');
+      //     const patientsData = await patientsRes.json();
+      //     setPatients(patientsData);
+      //
+      //     const staffRes = await fetch('/api/staff');
+      //     const staffData = await staffRes.json();
+      //     setStaff(staffData);
+      //   } catch (error) {
+      //     console.error("Error fetching data from API:", error);
+      //     alert("No se pudo cargar la información del servidor.");
+      //   } finally {
+      //     setIsLoading(false);
+      //   }
+      // };
+      // fetchAllData();
     } else {
-        setIsLoading(false);
+      setActiveTab('Inicio');
+      setPatients([]);
+      setStaff([]);
+      setSelectedPatientId(null);
     }
   }, [user]);
 
   const handleLogout = async () => {
-    try {
-      await auth.signOut();
-    } catch (error) {
-      console.error("Error signing out: ", error);
-      alert("Error al cerrar sesión.");
-    }
+    // TODO: Implement backend logout (e.g., clearing JWT)
+    setUser(null);
   };
-
+  
   const addPatient = useCallback(async (patient: Patient) => {
-    try {
-      await db.collection("patients").doc(patient.id).set(patient);
-      setPatients(prev => [...prev, patient]);
-      setSelectedPatientId(patient.id);
-    } catch (error) {
-      console.error("Error adding patient: ", error);
-      alert("Error al agregar el paciente a la base de datos.");
-      throw error;
-    }
+    // TODO: Reemplazar con una llamada a la API: fetch('/api/patients', { method: 'POST', body: JSON.stringify(patient) })
+    alert('Funcionalidad de agregar paciente deshabilitada durante la migración.');
   }, []);
   
-  // Actualiza un paciente existente en Firestore.
-  // El uso de { merge: true } es crucial aquí. Asegura que solo los campos
-  // proporcionados en `updatedPatient` se modifiquen en la base de datos,
-  // fusionando los datos en lugar de sobrescribir el documento completo.
-  // Esto previene la pérdida de datos si diferentes partes de la aplicación
-  // actualizan distintas secciones del historial del paciente.
   const updatePatient = useCallback(async (updatedPatient: Patient) => {
-    try {
-      await db.collection("patients").doc(updatedPatient.id).set(updatedPatient, { merge: true });
-      setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
-    } catch (error) {
-      console.error("Error updating patient: ", error);
-      alert("Error al actualizar el paciente en la base de datos.");
-      throw error;
-    }
+    // TODO: Reemplazar con una llamada a la API: fetch(`/api/patients/${updatedPatient.id}`, { method: 'PUT', body: JSON.stringify(updatedPatient) })
+     alert('Funcionalidad de actualizar paciente deshabilitada durante la migración.');
   }, []);
 
   const addStaffMember = useCallback(async (staffMember: StaffMember) => {
-    try {
-      await db.collection("staff").doc(staffMember.id).set(staffMember);
-      setStaff(prev => [...prev, staffMember]);
-    } catch (error) {
-      console.error("Error adding staff member: ", error);
-      alert("Error al agregar al miembro del personal.");
-      throw error;
-    }
+    // TODO: Reemplazar con una llamada a la API: fetch('/api/staff', { method: 'POST', body: JSON.stringify(staffMember) })
+     alert('Funcionalidad de agregar personal deshabilitada durante la migración.');
   }, []);
 
   const selectedPatient = patients.find(p => p.id === selectedPatientId) || null;
@@ -163,13 +107,6 @@ export default function App() {
       );
   }
 
-  if (setupError === 'firestore') {
-      return <FirestoreErrorScreen />;
-  }
-  if (setupError === 'auth') {
-      return <AuthApiErrorScreen />;
-  }
-
   return (
     <div className="min-h-screen bg-brand-light-gray flex flex-col">
       {user ? (
@@ -186,7 +123,7 @@ export default function App() {
         </>
       ) : (
         <main className="flex-grow flex items-center justify-center p-4">
-          <Login setSetupError={setSetupError} />
+          <Login setUser={setUser} />
         </main>
       )}
       <Footer />

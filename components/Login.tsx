@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
-import { auth } from '../firebase';
 
 interface LoginProps {
-  setSetupError: (error: 'auth' | 'firestore' | null) => void;
+  setUser: (user: any) => void;
 }
 
-export default function Login({ setSetupError }: LoginProps) {
+export default function Login({ setUser }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,23 +16,17 @@ export default function Login({ setSetupError }: LoginProps) {
     setError('');
     setIsLoading(true);
     
-    try {
-        await auth.signInWithEmailAndPassword(email, password);
-        // onAuthStateChanged en App.tsx se encargará de la redirección y el estado.
-    } catch (err: any) {
-        console.error("Firebase login error:", err);
-        // Manejo de errores específico para guiar al usuario
-        if (err.code && (err.code.includes('identitytoolkit') || err.code === 'auth/network-request-failed')) {
-            setSetupError('auth');
-        } else if (err.code === 'auth/operation-not-allowed') {
-            setSetupError('auth');
-        } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-              setError('Usuario o clave incorrectos. Verifique que el usuario esté creado en la sección de Authentication de Firebase.');
-        } else {
-            setError('Error de autenticación con el servidor. Contacte al administrador.');
-        }
-    } finally {
+    // TODO: Reemplazar esto con una llamada a nuestro endpoint de backend /api/login
+    // que devolverá un token JWT en caso de éxito.
+    // Por ahora, simularemos un login exitoso para continuar con el desarrollo.
+    if (email && password) {
+      setTimeout(() => {
+        setUser({ email: email, name: "Usuario de Prueba" });
         setIsLoading(false);
+      }, 1000);
+    } else {
+      setError("Por favor ingrese usuario y clave.");
+      setIsLoading(false);
     }
   };
 
