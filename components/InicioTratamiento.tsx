@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Patient, FichaInicioTratamientoData, ITRN_MEDS, ITRNN_MEDS, IP_MEDS, INH_FUSION_MEDS, INH_INTEGRASA_MEDS, ESQUEMAS_COMBINADOS_MEDS, StaffMember } from '../types';
+import { Patient, FichaInicioTratamientoData, ITRN_MEDS, ITRNN_MEDS, IP_MEDS, INH_FUSION_MEDS, INH_INTEGRASA_MEDS, ESQUEMAS_COMBINADOS_MEDS, StaffMember } from '../core/types';
 import { DownloadIcon } from './icons/DownloadIcon';
 
 interface InicioTratamientoProps {

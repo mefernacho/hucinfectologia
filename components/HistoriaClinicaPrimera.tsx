@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Patient, HistoriaClinicaPrimera as HistoriaClinicaType, StaffMember, FactoresRiesgoData } from '../types';
+import { Patient, HistoriaClinicaPrimera as HistoriaClinicaType, StaffMember, FactoresRiesgoData } from '../core/types';
 
 interface HistoriaClinicaPrimeraProps {
   patient: Patient;

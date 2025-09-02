@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { firebaseConfig } from '../firebaseConfig';
+import { firebaseConfig } from '../firebase/config';
 
 export default function FirestoreErrorScreen() {
   const { projectId } = firebaseConfig;

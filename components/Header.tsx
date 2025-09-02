@@ -1,7 +1,8 @@
 
+
 import React, { useState } from 'react';
-import { Tab } from '../types';
-import { TABS } from '../constants';
+import { Tab } from '../core/types';
+import { TABS } from '../core/constants';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { StethoscopeIcon } from './icons/StethoscopeIcon';
 import { MenuIcon } from './icons/MenuIcon';

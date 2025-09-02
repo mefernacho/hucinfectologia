@@ -1,6 +1,7 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
-import { Tab, Patient, StaffMember } from './types';
-import { TABS, INITIAL_STAFF } from './constants';
+import { Tab, Patient, StaffMember } from './core/types';
+import { TABS, INITIAL_STAFF } from './core/constants';
 import Login from './components/Login';
 import Header from './components/Header';
 import Inicio from './components/Inicio';
@@ -18,7 +19,8 @@ import Footer from './components/Footer';
 import ChatComponent from './components/Chat';
 import { PlusIcon } from './components/icons/PlusIcon';
 import { auth, db } from './firebase';
-import FirebaseSetupGuide from './components/FirebaseSetupGuide';
+import AuthApiErrorScreen from './components/AuthApiErrorScreen';
+import FirestoreErrorScreen from './components/FirestoreErrorScreen';
 
 export default function App() {
   const [user, setUser] = useState<any | null>(null);
@@ -70,12 +72,10 @@ export default function App() {
           }
           setSetupError(null); // Conexión exitosa
         } catch (error: any) {
-          console.error("Firebase connection error: ", error);
-          if (error.code === 'unavailable' || error.code === 'failed-precondition' || error.code === 'permission-denied') {
-            setSetupError('firestore');
-          } else {
-            alert("Ocurrió un error inesperado al cargar los datos desde la base de datos.");
-          }
+          console.error("Firebase connection error during initial data load: ", error);
+          // Cualquier error durante la carga inicial de datos se considera un problema de configuración de Firestore.
+          // Los errores de autenticación se detectan por separado en el componente de Login.
+          setSetupError('firestore');
         } finally {
           setIsLoading(false);
         }
@@ -107,6 +107,12 @@ export default function App() {
     }
   }, []);
   
+  // Actualiza un paciente existente en Firestore.
+  // El uso de { merge: true } es crucial aquí. Asegura que solo los campos
+  // proporcionados en `updatedPatient` se modifiquen en la base de datos,
+  // fusionando los datos en lugar de sobrescribir el documento completo.
+  // Esto previene la pérdida de datos si diferentes partes de la aplicación
+  // actualizan distintas secciones del historial del paciente.
   const updatePatient = useCallback(async (updatedPatient: Patient) => {
     try {
       await db.collection("patients").doc(updatedPatient.id).set(updatedPatient, { merge: true });
@@ -157,10 +163,15 @@ export default function App() {
       );
   }
 
+  if (setupError === 'firestore') {
+      return <FirestoreErrorScreen />;
+  }
+  if (setupError === 'auth') {
+      return <AuthApiErrorScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-brand-light-gray flex flex-col">
-      {setupError && <FirebaseSetupGuide errorType={setupError} onClose={() => setSetupError(null)} />}
-      
       {user ? (
         <>
           <Header 

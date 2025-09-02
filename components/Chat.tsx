@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Chat } from "@google/genai";
-import { ChatMessage } from '../types';
+import { ChatMessage } from '../core/types';
 import { UserIcon } from './icons/UserIcon';
 
 const API_KEY = process.env.API_KEY;

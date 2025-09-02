@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Patient, EstudiosData, Inmunizacion, InmunizacionesData } from '../types';
+import { Patient, EstudiosData, Inmunizacion, InmunizacionesData } from '../core/types';
 
 interface LaboratoriosInmunizacionesProps {
   patient: Patient;

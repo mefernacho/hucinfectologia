@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Patient, TriageData, InmunizacionesData, CoInfeccionData, NeoplasiaData, FactoresRiesgoData } from '../types';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { Patient, TriageData, InmunizacionesData, CoInfeccionData, NeoplasiaData, FactoresRiesgoData } from '../core/types';
 import { UserIcon } from './icons/UserIcon';
 import { PlusCircleIcon } from './icons/PlusCircleIcon';
 
@@ -72,6 +73,7 @@ const initialFactoresRiesgo: FactoresRiesgoData = {
 
 export default function Triaje({ patients, addPatient, updatePatient, selectedPatientId, setSelectedPatientId }: TriajeProps) {
   const [formData, setFormData] = useState(initialFormState);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [imc, setImc] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(true);
 
@@ -97,9 +99,45 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
     }
   }, [formData.talla, formData.peso]);
   
+  const validateField = (name: string, value: string): string => {
+    const numValue = parseFloat(value);
+    switch (name) {
+        case 'id':
+            if (!/^\d+$/.test(value)) return "La cédula solo debe contener números.";
+            if (patients.some(p => p.id === value)) return "Ya existe un paciente con esta cédula.";
+            break;
+        case 'edad':
+            if (numValue <= 0 || numValue > 120) return "Edad inválida.";
+            break;
+        case 'talla':
+            if (numValue < 0.3 || numValue > 2.5) return "La talla debe estar entre 0.3 y 2.5 metros.";
+            break;
+        case 'peso':
+            if (numValue < 1 || numValue > 500) return "El peso debe estar entre 1 y 500 kg.";
+            break;
+        case 'temperatura':
+            if (numValue < 35 || numValue > 43) return "La temperatura debe estar entre 35 y 43°C.";
+            break;
+        case 'spo2':
+            if (numValue < 0 || numValue > 100) return "SpO2 debe estar entre 0 y 100%.";
+            break;
+        case 'fc':
+            if (numValue < 30 || numValue > 300) return "FC debe estar entre 30 y 300 lpm.";
+            break;
+        case 'fr':
+            if (numValue < 5 || numValue > 80) return "FR debe estar entre 5 y 80 rpm.";
+            break;
+        default:
+            break;
+    }
+    return '';
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    const error = validateField(name, value);
+    setFormErrors(prev => ({ ...prev, [name]: error }));
   };
 
   const handlePatientTypeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -110,10 +148,17 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
     }
   };
 
+  const isFormInvalid = useMemo(() => {
+      const requiredFields: (keyof typeof initialFormState)[] = ['nombres', 'apellidos', 'edad', 'id', 'fechaNacimiento', 'direccion', 'motivoConsulta', 'talla', 'peso'];
+      const hasEmptyFields = requiredFields.some(field => !formData[field]);
+      const hasErrors = Object.values(formErrors).some(error => !!error);
+      return hasEmptyFields || hasErrors;
+  }, [formData, formErrors]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (patients.some(p => p.id === formData.id)) {
-        alert("Error: Ya existe un paciente con esa cédula.");
+    if (isFormInvalid) {
+        alert("Por favor, corrija los errores en el formulario antes de continuar.");
         return;
     }
 
@@ -174,17 +219,32 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
     
     await addPatient(newPatient);
     setFormData(initialFormState);
+    setFormErrors({});
     setShowForm(false);
   };
 
   const currentPatient = patients.find(p => p.id === selectedPatientId);
+
+  const FormInput = ({ name, label, error, ...props }: { name: keyof typeof initialFormState, label: string, error?: string, [key: string]: any }) => (
+    <div>
+        <input 
+            name={name} 
+            value={formData[name]} 
+            onChange={handleChange} 
+            placeholder={label} 
+            className={`p-2 border rounded w-full ${error ? 'border-red-500' : ''}`}
+            {...props} 
+        />
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    </div>
+  );
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
       <div className="lg:col-span-1 bg-white rounded-lg shadow-md p-4 flex flex-col">
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-brand-blue">Lista de Pacientes</h2>
-            <button onClick={() => setShowForm(true)} className="p-2 rounded-full hover:bg-blue-100 transition-colors">
+            <button onClick={() => { setShowForm(true); setFormData(initialFormState); setFormErrors({}); }} className="p-2 rounded-full hover:bg-blue-100 transition-colors">
                 <PlusCircleIcon className="w-6 h-6 text-brand-blue"/>
             </button>
         </div>
@@ -221,24 +281,28 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
             <form onSubmit={handleSubmit} className="space-y-6">
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Identificación del Paciente</legend>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                        <input name="nombres" value={formData.nombres} onChange={handleChange} placeholder="Nombres" className="p-2 border rounded" required />
-                        <input name="apellidos" value={formData.apellidos} onChange={handleChange} placeholder="Apellidos" className="p-2 border rounded" required />
-                        <input name="edad" value={formData.edad} onChange={handleChange} type="number" placeholder="Edad" className="p-2 border rounded" required />
-                        <input name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleChange} type="date" placeholder="Fecha de Nacimiento" className="p-2 border rounded" required />
-                        <select name="sexo" value={formData.sexo} onChange={handleChange} className="p-2 border rounded bg-white">
-                            <option value="Masculino">Masculino</option>
-                            <option value="Femenino">Femenino</option>
-                        </select>
-                        <input name="id" value={formData.id} onChange={handleChange} placeholder="Cédula de Identidad" className="p-2 border rounded" required />
-                        <input name="direccion" value={formData.direccion} onChange={handleChange} placeholder="Dirección" className="p-2 border rounded md:col-span-2" required />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mt-2">
+                        <FormInput name="nombres" label="Nombres" required />
+                        <FormInput name="apellidos" label="Apellidos" required />
+                        <FormInput name="edad" label="Edad" type="number" error={formErrors.edad} required />
+                        <FormInput name="fechaNacimiento" label="Fecha de Nacimiento" type="date" required />
+                        <div className="w-full">
+                           <select name="sexo" value={formData.sexo} onChange={handleChange} className="p-2 border rounded bg-white w-full">
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                            </select>
+                        </div>
+                        <FormInput name="id" label="Cédula de Identidad" error={formErrors.id} required />
+                        <div className="md:col-span-2">
+                           <FormInput name="direccion" label="Dirección" required />
+                        </div>
                     </div>
                 </fieldset>
 
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Información de Consulta</legend>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                        <input name="motivoConsulta" value={formData.motivoConsulta} onChange={handleChange} placeholder="Motivo de Consulta" className="p-2 border rounded" required />
+                        <FormInput name="motivoConsulta" label="Motivo de Consulta" required />
                         <select name="tipoConsulta" value={formData.tipoConsulta} onChange={handleChange} className="p-2 border rounded bg-white">
                             <option>Primera consulta</option>
                             <option>Sucesivo</option>
@@ -248,20 +312,25 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
 
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Signos Vitales</legend>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                        <input name="pa" value={formData.pa} onChange={handleChange} placeholder="PA (mmHg)" className="p-2 border rounded" />
-                        <input name="talla" value={formData.talla} onChange={handleChange} type="number" step="0.01" placeholder="Talla (m)" className="p-2 border rounded" required />
-                        <input name="peso" value={formData.peso} onChange={handleChange} type="number" step="0.1" placeholder="Peso (kg)" className="p-2 border rounded" required />
-                        <div className="p-2 border rounded bg-slate-100 flex items-center justify-center">IMC: {imc || 'N/A'}</div>
-                        <input name="temperatura" value={formData.temperatura} onChange={handleChange} type="number" step="0.1" placeholder="T° (°C)" className="p-2 border rounded" />
-                        <input name="spo2" value={formData.spo2} onChange={handleChange} type="number" placeholder="SpO2 (%)" className="p-2 border rounded" />
-                        <input name="fc" value={formData.fc} onChange={handleChange} type="number" placeholder="FC (lpm)" className="p-2 border rounded" />
-                        <input name="fr" value={formData.fr} onChange={handleChange} type="number" placeholder="FR (rpm)" className="p-2 border rounded" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 mt-2">
+                        <FormInput name="pa" label="PA (mmHg)" />
+                        <FormInput name="talla" label="Talla (m)" type="number" step="0.01" error={formErrors.talla} required />
+                        <FormInput name="peso" label="Peso (kg)" type="number" step="0.1" error={formErrors.peso} required />
+                        <div className="p-2 border rounded bg-slate-100 flex items-center justify-center h-10">IMC: {imc || 'N/A'}</div>
+                        <FormInput name="temperatura" label="T° (°C)" type="number" step="0.1" error={formErrors.temperatura} />
+                        <FormInput name="spo2" label="SpO2 (%)" type="number" error={formErrors.spo2} />
+                        <FormInput name="fc" label="FC (lpm)" type="number" error={formErrors.fc} />
+                        <FormInput name="fr" label="FR (rpm)" type="number" error={formErrors.fr} />
                     </div>
                 </fieldset>
 
                 <div className="flex justify-end">
-                    <button type="submit" className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-800 transition">
+                    <button 
+                      type="submit" 
+                      disabled={isFormInvalid}
+                      className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg transition disabled:bg-slate-400 disabled:cursor-not-allowed hover:bg-blue-800"
+                      title={isFormInvalid ? 'Por favor, complete todos los campos requeridos y corrija los errores.' : 'Agregar Paciente'}
+                    >
                         Agregar Paciente
                     </button>
                 </div>

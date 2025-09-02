@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CoInfeccionData, HepatitisBData } from '../types';
+import { CoInfeccionData, HepatitisBData } from '../core/types';
 
 interface CoInfeccionViewProps {
   coInfeccionData: CoInfeccionData;

@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Patient, HistoriaClinicaSucesiva as SucesivaType, TriageData, StaffMember, EstudiosData } from '../types';
+import { Patient, HistoriaClinicaSucesiva as SucesivaType, TriageData, StaffMember, EstudiosData } from '../core/types';
 import { PlusCircleIcon } from './icons/PlusCircleIcon';
 
 interface HistoriaClinicaSucesivaProps {

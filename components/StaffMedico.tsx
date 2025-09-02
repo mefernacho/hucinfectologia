@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { StaffMember } from '../types';
+import { StaffMember } from '../core/types';
 import { UserPlusIcon } from './icons/UserPlusIcon';
 import { BriefcaseIcon } from './icons/BriefcaseIcon';
 

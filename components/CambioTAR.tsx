@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Patient, TARChange, TARSchemes } from '../types';
+import { Patient, TARChange, TARSchemes } from '../core/types';
 import CoInfeccionView from './CoInfeccionView';
 import { PlusCircleIcon } from './icons/PlusCircleIcon';
 

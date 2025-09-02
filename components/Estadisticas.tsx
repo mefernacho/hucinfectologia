@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo } from 'react';
-import { Patient, InmunizacionesData, CoInfeccionData, NeoplasiaData, NeoplasiaType, HepatitisBData, FichaInicioTratamientoData, TARSchemes } from '../types';
+import { Patient, InmunizacionesData, CoInfeccionData, NeoplasiaData, NeoplasiaType, HepatitisBData, FichaInicioTratamientoData, TARSchemes } from '../core/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 interface EstadisticasProps {

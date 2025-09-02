@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Patient, EmbarazadaData } from '../types';
+import { Patient, EmbarazadaData } from '../core/types';
 import CoInfeccionView from './CoInfeccionView';
 
 interface EmbarazadasProps {
