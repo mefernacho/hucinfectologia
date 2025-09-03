@@ -1,11 +1,17 @@
 
-require('dotenv').config();
-const express = require('express');
-const path = require('path');
-const { Pool } = require('pg');
+import 'dotenv/config';
+import express from 'express';
+import path from 'path';
+import pg from 'pg';
+import { fileURLToPath } from 'url';
 
+const { Pool } = pg;
 const app = express();
 const port = process.env.PORT || 8080;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 // PostgreSQL client setup
 // IMPORTANTE: Para Cloud SQL, puede que necesite configurar SSL para una conexión IP directa,
