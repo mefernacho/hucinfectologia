@@ -295,8 +295,8 @@ export default function Registro({ patients }: { patients: Patient[] }) {
                     <Section title={`Historias Clínicas Sucesivas (${foundPatient.historiasClinicasSucesivas.length})`} defaultOpen={false}>
                         {foundPatient.historiasClinicasSucesivas.length > 0 ? (
                             <div className="space-y-4">
-                                {foundPatient.historiasClinicasSucesivas.map((historia, index) => (
-                                    <div key={index} className="border p-4 rounded-lg bg-slate-50">
+                                {foundPatient.historiasClinicasSucesivas.map(historia => (
+                                    <div key={historia.id} className="border p-4 rounded-lg bg-slate-50">
                                         <p className="font-bold text-brand-gray mb-2">Fecha: {new Date(historia.fecha).toLocaleString('es-VE')}</p>
                                         <div className="mb-3">
                                             <p className="font-semibold text-sm text-slate-600">Signos Vitales:</p>

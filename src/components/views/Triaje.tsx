@@ -181,7 +181,7 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
     } else {
         setShowForm(false);
     }
-  }, [patients, selectedPatientId, setSelectedPatientId]);
+  }, [patients, selectedPatientId]);
   
   useEffect(() => {
     const height = parseFloat(formData.talla);
