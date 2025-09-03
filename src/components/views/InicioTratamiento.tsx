@@ -191,8 +191,7 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
     }
   };
 
-  const renderMedCell = (type, medKey, label) => {
-      if (!medKey) return <><td className="border px-2 py-1"></td><td className="border px-2 py-1"></td></>;
+  const renderMedCell = (type: keyof typeof MED_LABELS, medKey: string, label: string) => {
       return <>
           <td className="border px-2 py-1">
               <label className="flex items-center space-x-2 text-sm">
@@ -210,20 +209,21 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
     const itrnMed = ITRN_MEDS[index];
     const itrnnMed = ITRNN_MEDS[index];
     const ipMed = IP_MEDS[index];
+    
+    const emptyCells = <><td className="border px-2 py-1"></td><td className="border px-2 py-1"></td></>;
 
     return (
         <tr key={index}>
-            {renderMedCell('ITRN', itrnMed, MED_LABELS.ITRN[itrnMed])}
-            {renderMedCell('ITRNN', itrnnMed, MED_LABELS.ITRNN[itrnnMed])}
-            {renderMedCell('IP', ipMed, MED_LABELS.IP[ipMed])}
+            {itrnMed ? renderMedCell('ITRN', itrnMed, MED_LABELS.ITRN[itrnMed]) : emptyCells}
+            {itrnnMed ? renderMedCell('ITRNN', itrnnMed, MED_LABELS.ITRNN[itrnnMed]) : emptyCells}
+            {ipMed ? renderMedCell('IP', ipMed, MED_LABELS.IP[ipMed]) : emptyCells}
         </tr>
     );
   };
   
-  const renderSpecialMedRow = (type, medKey, label, colSpanStart) => (
+  const renderSpecialMedRow = (type: string) => (
       <tr>
-          {[...Array(colSpanStart - 1)].map((_, i) => <td key={i} className="border px-2 py-1"></td>)}
-          <td className="border px-2 py-1 font-bold text-sm bg-slate-100" colSpan={6}>{type === 'InhFusion' ? 'Inh Fusión' : 'Inh Integrasa'}</td>
+          <td className="border px-2 py-1 font-bold text-sm bg-slate-100 text-center" colSpan={6}>{type === 'InhFusion' ? 'Inh Fusión' : 'Inh Integrasa'}</td>
       </tr>
   );
 
@@ -331,13 +331,13 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
                     </thead>
                     <tbody>
                         {Array.from({ length: maxRows }).map((_, i) => renderMedicationRow(i))}
-                        {renderSpecialMedRow('InhFusion', 'enfuvirtide', 'Inh Fusión', 3)}
+                        {renderSpecialMedRow('InhFusion')}
                         <tr>
                             <td/><td/>
                             {renderMedCell('InhFusion', 'enfuvirtide', MED_LABELS.InhFusion.enfuvirtide)}
                             <td/><td/>
                         </tr>
-                        {renderSpecialMedRow('InhIntegrasa', 'raltegravir', 'Inh Integrasa', 3)}
+                        {renderSpecialMedRow('InhIntegrasa')}
                          <tr>
                             <td/><td/>
                             {renderMedCell('InhIntegrasa', 'raltegravir', MED_LABELS.InhIntegrasa.raltegravir)}

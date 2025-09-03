@@ -69,6 +69,18 @@ const initialFactoresRiesgo: FactoresRiesgoData = {
     dm: false,
 };
 
+const FormInput = ({ name, label, error, ...props }: { name: string, label: string, error?: string, [key: string]: any }) => (
+    <div>
+        <input 
+            name={name} 
+            placeholder={label} 
+            className={`p-2 border rounded w-full ${error ? 'border-red-500' : ''}`}
+            {...props} 
+        />
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    </div>
+);
+
 
 export default function Triaje({ patients, addPatient, updatePatient, selectedPatientId, setSelectedPatientId }: TriajeProps) {
   const [formData, setFormData] = useState(initialFormState);
@@ -224,20 +236,6 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
 
   const currentPatient = patients.find(p => p.id === selectedPatientId);
 
-  const FormInput = ({ name, label, error, ...props }: { name: keyof typeof initialFormState, label: string, error?: string, [key: string]: any }) => (
-    <div>
-        <input 
-            name={name} 
-            value={formData[name]} 
-            onChange={handleChange} 
-            placeholder={label} 
-            className={`p-2 border rounded w-full ${error ? 'border-red-500' : ''}`}
-            {...props} 
-        />
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
       <div className="lg:col-span-1 bg-white rounded-lg shadow-md p-4 flex flex-col">
@@ -281,19 +279,19 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Identificación del Paciente</legend>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mt-2">
-                        <FormInput name="nombres" label="Nombres" required />
-                        <FormInput name="apellidos" label="Apellidos" required />
-                        <FormInput name="edad" label="Edad" type="number" error={formErrors.edad} required />
-                        <FormInput name="fechaNacimiento" label="Fecha de Nacimiento" type="date" required />
+                        <FormInput name="nombres" label="Nombres" value={formData.nombres} onChange={handleChange} required />
+                        <FormInput name="apellidos" label="Apellidos" value={formData.apellidos} onChange={handleChange} required />
+                        <FormInput name="edad" label="Edad" type="number" value={formData.edad} onChange={handleChange} error={formErrors.edad} required />
+                        <FormInput name="fechaNacimiento" label="Fecha de Nacimiento" type="date" value={formData.fechaNacimiento} onChange={handleChange} required />
                         <div className="w-full">
                            <select name="sexo" value={formData.sexo} onChange={handleChange} className="p-2 border rounded bg-white w-full">
                                 <option value="Masculino">Masculino</option>
                                 <option value="Femenino">Femenino</option>
                             </select>
                         </div>
-                        <FormInput name="id" label="Cédula de Identidad" error={formErrors.id} required />
+                        <FormInput name="id" label="Cédula de Identidad" value={formData.id} onChange={handleChange} error={formErrors.id} required />
                         <div className="md:col-span-2">
-                           <FormInput name="direccion" label="Dirección" required />
+                           <FormInput name="direccion" label="Dirección" value={formData.direccion} onChange={handleChange} required />
                         </div>
                     </div>
                 </fieldset>
@@ -301,7 +299,7 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Información de Consulta</legend>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                        <FormInput name="motivoConsulta" label="Motivo de Consulta" required />
+                        <FormInput name="motivoConsulta" label="Motivo de Consulta" value={formData.motivoConsulta} onChange={handleChange} required />
                         <select name="tipoConsulta" value={formData.tipoConsulta} onChange={handleChange} className="p-2 border rounded bg-white">
                             <option>Primera consulta</option>
                             <option>Sucesivo</option>
@@ -312,14 +310,14 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Signos Vitales</legend>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 mt-2">
-                        <FormInput name="pa" label="PA (mmHg)" />
-                        <FormInput name="talla" label="Talla (m)" type="number" step="0.01" error={formErrors.talla} required />
-                        <FormInput name="peso" label="Peso (kg)" type="number" step="0.1" error={formErrors.peso} required />
+                        <FormInput name="pa" label="PA (mmHg)" value={formData.pa} onChange={handleChange} />
+                        <FormInput name="talla" label="Talla (m)" type="number" step="0.01" value={formData.talla} onChange={handleChange} error={formErrors.talla} required />
+                        <FormInput name="peso" label="Peso (kg)" type="number" step="0.1" value={formData.peso} onChange={handleChange} error={formErrors.peso} required />
                         <div className="p-2 border rounded bg-slate-100 flex items-center justify-center h-10">IMC: {imc || 'N/A'}</div>
-                        <FormInput name="temperatura" label="T° (°C)" type="number" step="0.1" error={formErrors.temperatura} />
-                        <FormInput name="spo2" label="SpO2 (%)" type="number" error={formErrors.spo2} />
-                        <FormInput name="fc" label="FC (lpm)" type="number" error={formErrors.fc} />
-                        <FormInput name="fr" label="FR (rpm)" type="number" error={formErrors.fr} />
+                        <FormInput name="temperatura" label="T° (°C)" type="number" step="0.1" value={formData.temperatura} onChange={handleChange} error={formErrors.temperatura} />
+                        <FormInput name="spo2" label="SpO2 (%)" type="number" value={formData.spo2} onChange={handleChange} error={formErrors.spo2} />
+                        <FormInput name="fc" label="FC (lpm)" type="number" value={formData.fc} onChange={handleChange} error={formErrors.fc} />
+                        <FormInput name="fr" label="FR (rpm)" type="number" value={formData.fr} onChange={handleChange} error={formErrors.fr} />
                     </div>
                 </fieldset>
 
