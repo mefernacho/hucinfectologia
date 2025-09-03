@@ -75,6 +75,11 @@
 </head>
   <body class="bg-brand-light-gray">
     <div id="root"></div>
+    <script>
+      // Polyfill for process.env to prevent crash in browser environments.
+      // The execution environment is expected to provide the actual API_KEY.
+      window.process = window.process || { env: {} };
+    </script>
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
