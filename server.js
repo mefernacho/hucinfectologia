@@ -1,4 +1,5 @@
-require('dotenv').config();
+
+require('dotenv').config({ path: './configuracion.tsx' });
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -15,11 +16,8 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
-  // Para Cloud Run con Cloud SQL Proxy, comente las líneas de host/port/ssl y descomente esta:
+  // Para Cloud Run con Cloud SQL Proxy, comente las líneas de host/port y descomente esta:
   // host: `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`,
-  ssl: {
-    rejectUnauthorized: false // Ajustar según los requisitos SSL de su instancia de Cloud SQL
-  }
 });
 
 // Probar la conexión a la base de datos al iniciar
