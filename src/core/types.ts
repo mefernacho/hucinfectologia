@@ -244,9 +244,8 @@ export interface StaffMember {
   especialidad: string;
 }
 
-export type Tab = 'Inicio' | 'Registro' | 'Triaje' | 'Historia Clinica de Primera' | 'Historia Clinica Sucesiva' | 'Inicio de tratamiento' | 'Cambio de TAR' | 'Embarazadas' | 'Laboratorios e Inmunizaciones' | 'Staff Médico' | 'Estadísticas';
+export type Tab = 'Inicio' | 'Registro' | 'Triaje' | 'Historia Clinica de Primera' | 'Historia Clinica Sucesiva' | 'Inicio de tratamiento' | 'Cambio de TAR' | 'Embarazadas' | 'Laboratorios e Inmunizaciones' | 'Staff Médico' | 'Estadísticas' | 'Chat';
 
-// FIX: Add ChatMessage interface for the chat component.
 export interface ChatMessage {
   role: 'user' | 'model';
   parts: { text: string }[];

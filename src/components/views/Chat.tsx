@@ -6,7 +6,6 @@ import { UserIcon } from '../icons/UserIcon';
 const API_KEY = process.env.API_KEY;
 
 // System instruction for the AI model
-// FIX: Changed systemInstruction to a string and will pass it in the config object, as per Gemini API guidelines.
 const systemInstruction = "Eres un asistente médico experto en infectología. Tu propósito es proporcionar información clara, concisa y basada en evidencia sobre enfermedades infecciosas, tratamientos y pautas clínicas. Responde a las preguntas del personal médico de manera profesional. Siempre aclara que eres un modelo de IA y que tu consejo no reemplaza el juicio clínico de un profesional de la salud calificado. No proporciones diagnósticos ni planes de tratamiento para pacientes específicos.";
 
 export default function ChatComponent() {
@@ -33,7 +32,6 @@ export default function ChatComponent() {
         const ai = new GoogleGenAI({ apiKey: API_KEY });
         const newChat = ai.chats.create({
           model: 'gemini-2.5-flash',
-          // FIX: Pass systemInstruction through the config object.
           config: {
             systemInstruction: systemInstruction,
           },

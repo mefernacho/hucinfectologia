@@ -15,6 +15,7 @@ import InicioTratamiento from './components/views/InicioTratamiento';
 import CambioTAR from './components/views/CambioTAR';
 import Embarazadas from './components/views/Embarazadas';
 import Footer from './components/layout/Footer';
+import Chat from './components/views/Chat';
 import { PlusIcon } from './components/icons/PlusIcon';
 
 const API_BASE_URL = 'https://backend-api-511318369202.us-central1.run.app';
@@ -94,6 +95,7 @@ export default function App() {
       case 'Laboratorios e Inmunizaciones': return selectedPatient ? <LaboratoriosInmunizaciones patient={selectedPatient} onSave={updatePatient} /> : <NoPatientSelected />;
       case 'Staff Médico': return <StaffMedico staff={staff} addStaffMember={addStaffMember} />;
       case 'Estadísticas': return <Estadisticas patients={patients} />;
+      case 'Chat': return <Chat />;
       default: return <Inicio />;
     }
   };

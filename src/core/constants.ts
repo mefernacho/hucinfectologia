@@ -12,6 +12,7 @@ export const TABS: Tab[] = [
     'Laboratorios e Inmunizaciones', 
     'Staff Médico', 
     'Estadísticas',
+    'Chat',
 ];
 
 export const INITIAL_STAFF: StaffMember[] = [
