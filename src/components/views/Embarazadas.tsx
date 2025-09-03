@@ -20,9 +20,11 @@ const initialEmbarazadaState: EmbarazadaData = {
 
 export default function Embarazadas({ patient, onSave }: EmbarazadasProps) {
   const [formData, setFormData] = useState<EmbarazadaData>(patient.embarazadaData || initialEmbarazadaState);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setFormData(patient.embarazadaData || initialEmbarazadaState);
+    setErrors({});
   }, [patient]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -34,7 +36,26 @@ export default function Embarazadas({ patient, onSave }: EmbarazadasProps) {
     }));
   };
 
+  const validate = (): boolean => {
+      const newErrors: Record<string, string> = {};
+      if (!formData.fum) {
+          newErrors.fum = 'La fecha de última menstruación es requerida.';
+      }
+      if (!formData.antecedentesObstetricos.trim()) {
+          newErrors.antecedentesObstetricos = 'Los antecedentes obstétricos son requeridos.';
+      }
+      if (!formData.fechaDiagnosticoVIH.trim()) {
+        newErrors.fechaDiagnosticoVIH = 'La fecha de diagnóstico de VIH es requerida.';
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+  }
+
   const handleSave = async () => {
+    if (!validate()) {
+        alert('Por favor, complete todos los campos requeridos.');
+        return;
+    }
     const updatedPatient = { ...patient, embarazadaData: formData };
     await onSave(updatedPatient);
     alert('Datos de embarazo guardados con éxito.');
@@ -49,6 +70,8 @@ export default function Embarazadas({ patient, onSave }: EmbarazadasProps) {
     );
   }
 
+  const isSaveDisabled = !formData.fum || !formData.antecedentesObstetricos.trim() || !formData.fechaDiagnosticoVIH.trim();
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-brand-blue mb-2">Registro de Paciente Embarazada</h2>
@@ -60,15 +83,18 @@ export default function Embarazadas({ patient, onSave }: EmbarazadasProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
                 <div>
                     <label className="block text-sm font-medium text-brand-gray">Fecha de Última Menstruación (FUM)</label>
-                    <input type="date" name="fum" value={formData.fum} onChange={handleChange} className="mt-1 w-full p-2 border rounded" />
+                    <input type="date" name="fum" value={formData.fum} onChange={handleChange} className={`mt-1 w-full p-2 border rounded ${errors.fum ? 'border-red-500' : 'border-slate-300'}`} />
+                    {errors.fum && <p className="text-red-500 text-xs mt-1">{errors.fum}</p>}
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-brand-gray">Fecha de Diagnóstico VIH</label>
-                    <input type="date" name="fechaDiagnosticoVIH" value={formData.fechaDiagnosticoVIH} onChange={handleChange} className="mt-1 w-full p-2 border rounded" />
+                    <input type="date" name="fechaDiagnosticoVIH" value={formData.fechaDiagnosticoVIH} onChange={handleChange} className={`mt-1 w-full p-2 border rounded ${errors.fechaDiagnosticoVIH ? 'border-red-500' : 'border-slate-300'}`} />
+                    {errors.fechaDiagnosticoVIH && <p className="text-red-500 text-xs mt-1">{errors.fechaDiagnosticoVIH}</p>}
                 </div>
                 <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-brand-gray">Antecedentes Obstétricos</label>
-                    <textarea name="antecedentesObstetricos" value={formData.antecedentesObstetricos} onChange={handleChange} rows={3} className="mt-1 w-full p-2 border rounded" placeholder="Gesta, Para, Aborto, Cesárea..."></textarea>
+                    <textarea name="antecedentesObstetricos" value={formData.antecedentesObstetricos} onChange={handleChange} rows={3} className={`mt-1 w-full p-2 border rounded ${errors.antecedentesObstetricos ? 'border-red-500' : 'border-slate-300'}`} placeholder="Gesta, Para, Aborto, Cesárea..."></textarea>
+                    {errors.antecedentesObstetricos && <p className="text-red-500 text-xs mt-1">{errors.antecedentesObstetricos}</p>}
                 </div>
             </div>
         </fieldset>
@@ -114,7 +140,8 @@ export default function Embarazadas({ patient, onSave }: EmbarazadasProps) {
       <div className="flex justify-end mt-8">
         <button
           onClick={handleSave}
-          className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-800 transition"
+          disabled={isSaveDisabled}
+          className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-800 transition disabled:bg-slate-400 disabled:cursor-not-allowed"
         >
           Guardar Datos de Embarazo
         </button>

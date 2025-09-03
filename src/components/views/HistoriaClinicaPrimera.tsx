@@ -10,9 +10,11 @@ interface HistoriaClinicaPrimeraProps {
 
 export default function HistoriaClinicaPrimera({ patient, onSave, staff, disabled }: HistoriaClinicaPrimeraProps) {
   const [formData, setFormData] = useState<HistoriaClinicaType>(patient.historiaClinicaPrimera);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setFormData(patient.historiaClinicaPrimera);
+    setErrors({}); // Clear errors when patient changes
   }, [patient]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLSelectElement | HTMLInputElement>) => {
@@ -68,15 +70,35 @@ export default function HistoriaClinicaPrimera({ patient, onSave, staff, disable
           return { ...prev, neoplasia: newNeoplasia };
       });
   };
+  
+  const validate = (): boolean => {
+      const newErrors: Record<string, string> = {};
+      if (!formData.enfermedadActual.trim()) {
+          newErrors.enfermedadActual = 'La enfermedad actual es requerida.';
+      }
+      if (!formData.examenFisico.trim()) {
+          newErrors.examenFisico = 'El examen físico es requerido.';
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+  }
 
   const handleSave = async () => {
+    if (!validate()) {
+        alert('Por favor, complete todos los campos requeridos.');
+        return;
+    }
     const updatedPatient = { ...patient, historiaClinicaPrimera: formData };
     await onSave(updatedPatient);
     alert('Historia clínica guardada con éxito.');
   };
 
   const { triage } = patient;
-  const isSaveDisabled = !!formData.residente === !!formData.medicoEvaluadorId;
+  
+  const isEvaluatorSelected = !!formData.residente || !!formData.medicoEvaluadorId;
+  const isOnlyOneEvaluator = !(!!formData.residente && !!formData.medicoEvaluadorId);
+  const isSaveDisabled = !isEvaluatorSelected || !isOnlyOneEvaluator;
+
 
   if (disabled) {
     return (
@@ -118,6 +140,7 @@ export default function HistoriaClinicaPrimera({ patient, onSave, staff, disable
           name="enfermedadActual"
           value={formData.enfermedadActual}
           onChange={handleChange}
+          error={errors.enfermedadActual}
           rows={4}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -214,6 +237,7 @@ export default function HistoriaClinicaPrimera({ patient, onSave, staff, disable
           name="examenFisico"
           value={formData.examenFisico}
           onChange={handleChange}
+          error={errors.examenFisico}
           rows={10}
         />
         
@@ -265,7 +289,7 @@ export default function HistoriaClinicaPrimera({ patient, onSave, staff, disable
           onClick={handleSave}
           disabled={isSaveDisabled}
           className={`px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg transition ${isSaveDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-800'}`}
-          title={isSaveDisabled ? 'Debe seleccionar un residente o un médico evaluador (solo uno).' : 'Guardar Cambios'}
+          title={isSaveDisabled ? 'Debe seleccionar un residente o un médico evaluador (solo uno) y completar los campos requeridos.' : 'Guardar Cambios'}
         >
           Guardar Cambios
         </button>
@@ -318,9 +342,10 @@ interface TextAreaProps {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
     rows?: number;
+    error?: string;
 }
 
-const TextArea = ({ label, name, value, onChange, rows = 3 }: TextAreaProps) => (
+const TextArea = ({ label, name, value, onChange, rows = 3, error }: TextAreaProps) => (
     <div>
         <label className="block text-md font-semibold text-brand-gray mb-2">{label}</label>
         <textarea
@@ -328,9 +353,12 @@ const TextArea = ({ label, name, value, onChange, rows = 3 }: TextAreaProps) => 
             value={value}
             onChange={onChange}
             rows={rows}
-            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-blue focus:outline-none transition"
+            className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-brand-blue focus:outline-none transition ${error ? 'border-red-500' : 'border-slate-300'}`}
             placeholder={`Detalles sobre ${label.toLowerCase()}...`}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${name}-error` : undefined}
         />
+        {error && <p id={`${name}-error`} className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
 );
 

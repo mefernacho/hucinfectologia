@@ -11,11 +11,20 @@ interface CambioTARProps {
 export default function CambioTAR({ patient, onSave }: CambioTARProps) {
   const [esquema, setEsquema] = useState<TARSchemes>('KOCITAF');
   const [notas, setNotas] = useState('');
+  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
 
+  const validate = (): boolean => {
+      if (!notas.trim()) {
+          setError('La justificación es requerida para registrar un cambio.');
+          return false;
+      }
+      setError('');
+      return true;
+  }
+
   const handleSave = async () => {
-    if (!esquema) {
-      alert('Por favor, seleccione un esquema de TAR.');
+    if (!validate()) {
       return;
     }
     const newChange: TARChange = {
@@ -32,6 +41,7 @@ export default function CambioTAR({ patient, onSave }: CambioTARProps) {
     alert('Cambio de TAR guardado con éxito.');
     setEsquema('KOCITAF');
     setNotas('');
+    setError('');
     setShowForm(false);
   };
 
@@ -73,14 +83,23 @@ export default function CambioTAR({ patient, onSave }: CambioTARProps) {
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
                 rows={4}
-                className="mt-1 w-full p-2 border rounded"
+                className={`mt-1 w-full p-2 border rounded ${error ? 'border-red-500' : 'border-slate-300'}`}
                 placeholder="Motivo del cambio, tolerancia, etc."
+                aria-invalid={!!error}
+                aria-describedby={error ? 'notas-error' : undefined}
               />
+              {error && <p id="notas-error" className="text-red-500 text-xs mt-1">{error}</p>}
             </div>
           </div>
            <div className="flex justify-end mt-6 space-x-4">
-                <button onClick={() => setShowForm(false)} className="px-6 py-2 bg-slate-500 text-white font-semibold rounded-lg hover:bg-slate-600 transition">Cancelar</button>
-                <button onClick={handleSave} className="px-6 py-2 bg-brand-red text-white font-semibold rounded-lg hover:bg-red-800 transition">Guardar Cambio</button>
+                <button onClick={() => { setShowForm(false); setError(''); }} className="px-6 py-2 bg-slate-500 text-white font-semibold rounded-lg hover:bg-slate-600 transition">Cancelar</button>
+                <button 
+                  onClick={handleSave} 
+                  disabled={!notas.trim()}
+                  className="px-6 py-2 bg-brand-red text-white font-semibold rounded-lg hover:bg-red-800 transition disabled:bg-slate-400 disabled:cursor-not-allowed"
+                >
+                    Guardar Cambio
+                </button>
             </div>
         </div>
       )}

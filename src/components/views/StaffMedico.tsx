@@ -11,10 +11,26 @@ interface StaffMedicoProps {
 export default function StaffMedico({ staff, addStaffMember }: StaffMedicoProps) {
   const [nombre, setNombre] = useState('');
   const [especialidad, setEspecialidad] = useState('');
+  const [errors, setErrors] = useState({ nombre: '', especialidad: ''});
+
+  const validate = () => {
+    const newErrors = { nombre: '', especialidad: '' };
+    let isValid = true;
+    if (!nombre.trim()) {
+        newErrors.nombre = 'El nombre es requerido.';
+        isValid = false;
+    }
+    if (!especialidad.trim()) {
+        newErrors.especialidad = 'La especialidad es requerida.';
+        isValid = false;
+    }
+    setErrors(newErrors);
+    return isValid;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (nombre && especialidad) {
+    if (validate()) {
       const newMember: StaffMember = {
         id: new Date().getTime().toString(),
         nombre,
@@ -59,10 +75,12 @@ export default function StaffMedico({ staff, addStaffMember }: StaffMedicoProps)
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="mt-1 w-full p-2 border rounded"
+              className={`mt-1 w-full p-2 border rounded ${errors.nombre ? 'border-red-500' : 'border-slate-300'}`}
               placeholder="Dr. Juan Pérez"
-              required
+              aria-invalid={!!errors.nombre}
+              aria-describedby={errors.nombre ? 'nombre-error' : undefined}
             />
+            {errors.nombre && <p id="nombre-error" className="text-red-500 text-xs mt-1">{errors.nombre}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-brand-gray">Especialidad</label>
@@ -70,15 +88,18 @@ export default function StaffMedico({ staff, addStaffMember }: StaffMedicoProps)
               type="text"
               value={especialidad}
               onChange={(e) => setEspecialidad(e.target.value)}
-              className="mt-1 w-full p-2 border rounded"
+              className={`mt-1 w-full p-2 border rounded ${errors.especialidad ? 'border-red-500' : 'border-slate-300'}`}
               placeholder="Cardiólogo"
-              required
+              aria-invalid={!!errors.especialidad}
+              aria-describedby={errors.especialidad ? 'especialidad-error' : undefined}
             />
+            {errors.especialidad && <p id="especialidad-error" className="text-red-500 text-xs mt-1">{errors.especialidad}</p>}
           </div>
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-800 transition"
+              disabled={!nombre || !especialidad}
+              className="w-full py-2 px-4 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-800 transition disabled:bg-slate-400 disabled:cursor-not-allowed"
             >
               Agregar
             </button>

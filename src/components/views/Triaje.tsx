@@ -69,15 +69,98 @@ const initialFactoresRiesgo: FactoresRiesgoData = {
     dm: false,
 };
 
+const validate = (data: typeof initialFormState, existingPatients: Patient[], isNewPatient: boolean): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    const now = new Date();
+    const dob = data.fechaNacimiento ? new Date(data.fechaNacimiento) : null;
+
+    // Required personal data
+    if (!data.nombres.trim()) errors.nombres = "El nombre es requerido.";
+    if (!data.apellidos.trim()) errors.apellidos = "El apellido es requerido.";
+    if (!data.edad) errors.edad = "La edad es requerida.";
+    else if (!/^\d+$/.test(data.edad)) errors.edad = "La edad debe ser un número entero.";
+    else {
+        const numValue = parseInt(data.edad, 10);
+        if (numValue <= 0 || numValue > 120) errors.edad = "Edad inválida (debe ser entre 1 y 120).";
+    }
+    if (!data.id.trim()) errors.id = "La cédula es requerida.";
+    else if (!/^\d+$/.test(data.id)) errors.id = "La cédula solo debe contener números.";
+    else if (isNewPatient && existingPatients.some(p => p.id === data.id)) errors.id = "Ya existe un paciente con esta cédula.";
+    
+    if (!data.fechaNacimiento) errors.fechaNacimiento = "La fecha de nacimiento es requerida.";
+    else if (dob && dob > now) errors.fechaNacimiento = "La fecha de nacimiento no puede ser futura.";
+    
+    if (!data.direccion.trim()) errors.direccion = "La dirección es requerida.";
+    if (!data.motivoConsulta.trim()) errors.motivoConsulta = "El motivo de consulta es requerido.";
+    
+    // Vital signs validation
+    if (data.pa && !/^\d{1,3}\/\d{1,3}$/.test(data.pa)) {
+        errors.pa = "Formato inválido. Use NNN/NNN.";
+    }
+
+    // Talla validation
+    if (!data.talla) errors.talla = "La talla es requerida.";
+    else if (!/^\d*\.?\d+$/.test(data.talla)) errors.talla = "La talla debe ser un valor numérico.";
+    else {
+        const numValue = parseFloat(data.talla);
+        if (numValue < 0.3 || numValue > 2.5) errors.talla = "Talla inválida (entre 0.3 y 2.5 m).";
+    }
+
+    // Peso validation
+    if (!data.peso) errors.peso = "El peso es requerido.";
+    else if (!/^\d*\.?\d+$/.test(data.peso)) errors.peso = "El peso debe ser un valor numérico.";
+    else {
+        const numValue = parseFloat(data.peso);
+        if (numValue < 1 || numValue > 500) errors.peso = "Peso inválido (entre 1 y 500 kg).";
+    }
+
+    // Temperatura validation
+    if (data.temperatura && !/^\d*\.?\d+$/.test(data.temperatura)) {
+        errors.temperatura = "La temperatura debe ser un valor numérico.";
+    } else if (data.temperatura) {
+        const numValue = parseFloat(data.temperatura);
+        if (numValue < 35 || numValue > 43) errors.temperatura = "Temp. inválida (entre 35 y 43°C).";
+    }
+
+    // SpO2 validation
+    if (data.spo2 && !/^\d+$/.test(data.spo2)) {
+        errors.spo2 = "SpO2 debe ser un valor numérico entero.";
+    } else if (data.spo2) {
+        const numValue = parseInt(data.spo2, 10);
+        if (numValue < 0 || numValue > 100) errors.spo2 = "SpO2 inválido (entre 0 y 100%).";
+    }
+
+    // FC validation
+    if (data.fc && !/^\d+$/.test(data.fc)) {
+        errors.fc = "FC debe ser un valor numérico entero.";
+    } else if (data.fc) {
+        const numValue = parseInt(data.fc, 10);
+        if (numValue < 30 || numValue > 300) errors.fc = "FC inválida (entre 30 y 300 lpm).";
+    }
+
+    // FR validation
+    if (data.fr && !/^\d+$/.test(data.fr)) {
+        errors.fr = "FR debe ser un valor numérico entero.";
+    } else if (data.fr) {
+        const numValue = parseInt(data.fr, 10);
+        if (numValue < 5 || numValue > 80) errors.fr = "FR inválida (entre 5 y 80 rpm).";
+    }
+
+    return errors;
+};
+
+
 const FormInput = ({ name, label, error, ...props }: { name: string, label: string, error?: string, [key: string]: any }) => (
     <div>
         <input 
             name={name} 
             placeholder={label} 
-            className={`p-2 border rounded w-full ${error ? 'border-red-500' : ''}`}
+            className={`p-2 border rounded w-full ${error ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${name}-error` : undefined}
             {...props} 
         />
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        {error && <p id={`${name}-error`} className="text-red-600 text-xs mt-1">{error}</p>}
     </div>
 );
 
@@ -87,6 +170,7 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [imc, setImc] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (patients.length > 0 && !selectedPatientId) {
@@ -109,46 +193,15 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
       setImc(null);
     }
   }, [formData.talla, formData.peso]);
-  
-  const validateField = (name: string, value: string): string => {
-    const numValue = parseFloat(value);
-    switch (name) {
-        case 'id':
-            if (!/^\d+$/.test(value)) return "La cédula solo debe contener números.";
-            if (patients.some(p => p.id === value)) return "Ya existe un paciente con esta cédula.";
-            break;
-        case 'edad':
-            if (numValue <= 0 || numValue > 120) return "Edad inválida.";
-            break;
-        case 'talla':
-            if (numValue < 0.3 || numValue > 2.5) return "La talla debe estar entre 0.3 y 2.5 metros.";
-            break;
-        case 'peso':
-            if (numValue < 1 || numValue > 500) return "El peso debe estar entre 1 y 500 kg.";
-            break;
-        case 'temperatura':
-            if (numValue < 35 || numValue > 43) return "La temperatura debe estar entre 35 y 43°C.";
-            break;
-        case 'spo2':
-            if (numValue < 0 || numValue > 100) return "SpO2 debe estar entre 0 y 100%.";
-            break;
-        case 'fc':
-            if (numValue < 30 || numValue > 300) return "FC debe estar entre 30 y 300 lpm.";
-            break;
-        case 'fr':
-            if (numValue < 5 || numValue > 80) return "FR debe estar entre 5 y 80 rpm.";
-            break;
-        default:
-            break;
-    }
-    return '';
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    const error = validateField(name, value);
-    setFormErrors(prev => ({ ...prev, [name]: error }));
+    const newFormData = { ...formData, [name]: value };
+    setFormData(newFormData);
+    // Re-validate on change if form has already been submitted
+    if (isSubmitting) {
+        setFormErrors(validate(newFormData, patients, true));
+    }
   };
 
   const handlePatientTypeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -158,17 +211,20 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
         await updatePatient(updatedPatient);
     }
   };
-
-  const isFormInvalid = useMemo(() => {
-      const requiredFields: (keyof typeof initialFormState)[] = ['nombres', 'apellidos', 'edad', 'id', 'fechaNacimiento', 'direccion', 'motivoConsulta', 'talla', 'peso'];
-      const hasEmptyFields = requiredFields.some(field => !formData[field]);
-      const hasErrors = Object.values(formErrors).some(error => !!error);
-      return hasEmptyFields || hasErrors;
-  }, [formData, formErrors]);
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isFormInvalid) {
+    setIsSubmitting(true);
+    const validationErrors = validate(formData, patients, true);
+    setFormErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+        // Find the first element with an error to focus it
+        const firstErrorField = Object.keys(validationErrors)[0];
+        const element = document.getElementsByName(firstErrorField)[0];
+        if (element) {
+            element.focus();
+        }
         alert("Por favor, corrija los errores en el formulario antes de continuar.");
         return;
     }
@@ -178,10 +234,10 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
       talla: parseFloat(formData.talla),
       peso: parseFloat(formData.peso),
       imc: imc || 0,
-      temperatura: parseFloat(formData.temperatura),
-      spo2: parseFloat(formData.spo2),
-      fc: parseFloat(formData.fc),
-      fr: parseFloat(formData.fr),
+      temperatura: parseFloat(formData.temperatura) || 0,
+      spo2: parseFloat(formData.spo2) || 0,
+      fc: parseFloat(formData.fc) || 0,
+      fr: parseFloat(formData.fr) || 0,
     };
     
     const currentDate = new Date();
@@ -232,6 +288,7 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
     setFormData(initialFormState);
     setFormErrors({});
     setShowForm(false);
+    setIsSubmitting(false); // Reset after successful submission
   };
 
   const currentPatient = patients.find(p => p.id === selectedPatientId);
@@ -241,7 +298,7 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
       <div className="lg:col-span-1 bg-white rounded-lg shadow-md p-4 flex flex-col">
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-brand-blue">Lista de Pacientes</h2>
-            <button onClick={() => { setShowForm(true); setFormData(initialFormState); setFormErrors({}); }} className="p-2 rounded-full hover:bg-blue-100 transition-colors">
+            <button onClick={() => { setShowForm(true); setFormData(initialFormState); setFormErrors({}); setIsSubmitting(false); }} className="p-2 rounded-full hover:bg-blue-100 transition-colors" title="Agregar Nuevo Paciente">
                 <PlusCircleIcon className="w-6 h-6 text-brand-blue"/>
             </button>
         </div>
@@ -275,23 +332,23 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
                 <h2 className="text-2xl font-bold text-brand-blue mb-6">Registro de Triaje</h2>
                 {patients.length > 0 && <button onClick={() => setShowForm(false)} className="text-2xl text-slate-400 hover:text-brand-red">&times;</button>}
             </div>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Identificación del Paciente</legend>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 mt-2">
-                        <FormInput name="nombres" label="Nombres" value={formData.nombres} onChange={handleChange} required />
-                        <FormInput name="apellidos" label="Apellidos" value={formData.apellidos} onChange={handleChange} required />
+                        <FormInput name="nombres" label="Nombres" value={formData.nombres} onChange={handleChange} error={formErrors.nombres} required />
+                        <FormInput name="apellidos" label="Apellidos" value={formData.apellidos} onChange={handleChange} error={formErrors.apellidos} required />
                         <FormInput name="edad" label="Edad" type="number" value={formData.edad} onChange={handleChange} error={formErrors.edad} required />
-                        <FormInput name="fechaNacimiento" label="Fecha de Nacimiento" type="date" value={formData.fechaNacimiento} onChange={handleChange} required />
+                        <FormInput name="fechaNacimiento" label="Fecha de Nacimiento" type="date" value={formData.fechaNacimiento} onChange={handleChange} error={formErrors.fechaNacimiento} required />
                         <div className="w-full">
-                           <select name="sexo" value={formData.sexo} onChange={handleChange} className="p-2 border rounded bg-white w-full">
+                           <select name="sexo" value={formData.sexo} onChange={handleChange} className="p-2 border rounded bg-white w-full border-slate-300">
                                 <option value="Masculino">Masculino</option>
                                 <option value="Femenino">Femenino</option>
                             </select>
                         </div>
                         <FormInput name="id" label="Cédula de Identidad" value={formData.id} onChange={handleChange} error={formErrors.id} required />
                         <div className="md:col-span-2">
-                           <FormInput name="direccion" label="Dirección" value={formData.direccion} onChange={handleChange} required />
+                           <FormInput name="direccion" label="Dirección" value={formData.direccion} onChange={handleChange} error={formErrors.direccion} required />
                         </div>
                     </div>
                 </fieldset>
@@ -299,8 +356,8 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Información de Consulta</legend>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                        <FormInput name="motivoConsulta" label="Motivo de Consulta" value={formData.motivoConsulta} onChange={handleChange} required />
-                        <select name="tipoConsulta" value={formData.tipoConsulta} onChange={handleChange} className="p-2 border rounded bg-white">
+                        <FormInput name="motivoConsulta" label="Motivo de Consulta" value={formData.motivoConsulta} onChange={handleChange} error={formErrors.motivoConsulta} required />
+                        <select name="tipoConsulta" value={formData.tipoConsulta} onChange={handleChange} className="p-2 border rounded bg-white border-slate-300">
                             <option>Primera consulta</option>
                             <option>Sucesivo</option>
                         </select>
@@ -310,10 +367,10 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
                 <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Signos Vitales</legend>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 mt-2">
-                        <FormInput name="pa" label="PA (mmHg)" value={formData.pa} onChange={handleChange} />
+                        <FormInput name="pa" label="PA (mmHg)" value={formData.pa} onChange={handleChange} error={formErrors.pa} />
                         <FormInput name="talla" label="Talla (m)" type="number" step="0.01" value={formData.talla} onChange={handleChange} error={formErrors.talla} required />
                         <FormInput name="peso" label="Peso (kg)" type="number" step="0.1" value={formData.peso} onChange={handleChange} error={formErrors.peso} required />
-                        <div className="p-2 border rounded bg-slate-100 flex items-center justify-center h-10">IMC: {imc || 'N/A'}</div>
+                        <div className="p-2 border rounded bg-slate-100 flex items-center justify-center h-10 border-slate-300">IMC: {imc || 'N/A'}</div>
                         <FormInput name="temperatura" label="T° (°C)" type="number" step="0.1" value={formData.temperatura} onChange={handleChange} error={formErrors.temperatura} />
                         <FormInput name="spo2" label="SpO2 (%)" type="number" value={formData.spo2} onChange={handleChange} error={formErrors.spo2} />
                         <FormInput name="fc" label="FC (lpm)" type="number" value={formData.fc} onChange={handleChange} error={formErrors.fc} />
@@ -324,9 +381,7 @@ export default function Triaje({ patients, addPatient, updatePatient, selectedPa
                 <div className="flex justify-end">
                     <button 
                       type="submit" 
-                      disabled={isFormInvalid}
-                      className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg transition disabled:bg-slate-400 disabled:cursor-not-allowed hover:bg-blue-800"
-                      title={isFormInvalid ? 'Por favor, complete todos los campos requeridos y corrija los errores.' : 'Agregar Paciente'}
+                      className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg transition hover:bg-blue-800 disabled:bg-slate-400 disabled:cursor-not-allowed"
                     >
                         Agregar Paciente
                     </button>

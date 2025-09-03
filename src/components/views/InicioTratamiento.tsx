@@ -61,6 +61,7 @@ const MED_LABELS = {
 
 export default function InicioTratamiento({ patient, onSave, staff }: InicioTratamientoProps) {
   const [formData, setFormData] = useState<FichaInicioTratamientoData>(patient.fichaInicioTratamiento || initialFichaState);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const initialData = patient.fichaInicioTratamiento || { ...initialFichaState, id: new Date().toISOString() };
@@ -68,6 +69,7 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
     initialData.factoresRiesgo = patient.historiaClinicaPrimera.factoresRiesgo || initialData.factoresRiesgo;
     initialData.otrosFactores = patient.historiaClinicaPrimera.otrosFactores || initialData.otrosFactores;
     setFormData(initialData);
+    setErrors({});
   }, [patient]);
 
   const handleFieldChange = (field: string, value: any) => {
@@ -98,7 +100,23 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
     }))
   }
 
+  const validate = (): boolean => {
+      const newErrors: Record<string, string> = {};
+      if (!formData.entidadFederal.trim()) newErrors.entidadFederal = "Requerido";
+      if (!formData.centroAsistencial.trim()) newErrors.centroAsistencial = "Requerido";
+      if (!formData.tipoTratamiento) newErrors.tipoTratamiento = "Debe seleccionar si es Inicio o Cambio.";
+      if (!formData.justificacion.trim()) newErrors.justificacion = "La justificación es requerida.";
+      if (!formData.medicoTratante.trim()) newErrors.medicoTratante = "Debe seleccionar un médico tratante.";
+
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+  }
+
   const handleSave = async () => {
+    if (!validate()) {
+        alert('Por favor, complete todos los campos requeridos marcados en rojo.');
+        return;
+    }
     const updatedPatient = { ...patient, fichaInicioTratamiento: formData };
     await onSave(updatedPatient);
     alert('Ficha de inicio de tratamiento guardada con éxito.');
@@ -228,6 +246,7 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
   );
 
   const maxRows = Math.max(ITRN_MEDS.length, ITRNN_MEDS.length, IP_MEDS.length);
+  const isSaveDisabled = !formData.entidadFederal || !formData.centroAsistencial || !formData.tipoTratamiento || !formData.justificacion || !formData.medicoTratante;
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md print-container">
@@ -240,8 +259,8 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
         <fieldset className="border rounded-lg p-4 mb-4">
             <legend className="px-2 font-semibold text-brand-gray">SECCIÓN 1 y 2: IDENTIFICACIÓN</legend>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <TextInput label="1. Entidad Federal" value={formData.entidadFederal} onChange={e => handleFieldChange('entidadFederal', e.target.value)} />
-                <TextInput label="2. Centro Asistencial" value={formData.centroAsistencial} onChange={e => handleFieldChange('centroAsistencial', e.target.value)} />
+                <TextInput label="1. Entidad Federal" value={formData.entidadFederal} onChange={e => handleFieldChange('entidadFederal', e.target.value)} error={errors.entidadFederal} />
+                <TextInput label="2. Centro Asistencial" value={formData.centroAsistencial} onChange={e => handleFieldChange('centroAsistencial', e.target.value)} error={errors.centroAsistencial} />
                 <InfoDisplay label="3. Nombre Completo" value={`${patient.nombres} ${patient.apellidos}`} />
                 <div className="border rounded p-2">
                     <label className="block font-medium text-slate-700 text-xs">3.1 Nacionalidad y C.I.</label>
@@ -314,11 +333,12 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
         {/* SECTION 4 */}
         <fieldset className="border rounded-lg p-4 mb-4 text-sm">
             <legend className="px-2 font-semibold text-brand-gray">SECCIÓN 4: TRATAMIENTO ARV</legend>
-            <div className="flex items-center space-x-4 mb-2">
+            <div className={`flex items-center space-x-4 mb-2 p-2 rounded border ${errors.tipoTratamiento ? 'border-red-500' : 'border-transparent'}`}>
                 <span>Marque con X si es:</span>
                 <label className="flex items-center"><input type="radio" name="tipoTratamiento" value="inicio" checked={formData.tipoTratamiento === 'inicio'} onChange={e => handleFieldChange('tipoTratamiento', e.target.value)}/> INICIO</label>
                 <label className="flex items-center"><input type="radio" name="tipoTratamiento" value="cambio" checked={formData.tipoTratamiento === 'cambio'} onChange={e => handleFieldChange('tipoTratamiento', e.target.value)}/> CAMBIO</label>
             </div>
+            {errors.tipoTratamiento && <p className="text-red-500 text-xs -mt-2 mb-2 ml-2">{errors.tipoTratamiento}</p>}
             <p className="font-semibold mb-2">11. Medicamentos antirretrovirales:</p>
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse border">
@@ -401,15 +421,15 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
 
         {/* BOTTOM SECTION */}
         <div className="space-y-4 text-sm">
-            <TextInputArea label="17. Justifique el inicio del tratamiento con el esquema solicitado." value={formData.justificacion} onChange={e => handleFieldChange('justificacion', e.target.value)} rows={4} />
+            <TextInputArea label="17. Justifique el inicio del tratamiento con el esquema solicitado." value={formData.justificacion} onChange={e => handleFieldChange('justificacion', e.target.value)} rows={4} error={errors.justificacion} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput label="18. Fecha de Elaboración" type="date" value={formData.fechaElaboracion} onChange={e => handleFieldChange('fechaElaboracion', e.target.value)} />
                 <div>
-                    <label className="block font-medium text-slate-700 text-xs mb-1">19. Médico tratante (Nombre y Firma)</label>
+                    <label className={`block font-medium text-xs mb-1 ${errors.medicoTratante ? 'text-red-600' : 'text-slate-700'}`}>19. Médico tratante (Nombre y Firma)</label>
                      <select 
                         value={formData.medicoTratante} 
                         onChange={e => handleFieldChange('medicoTratante', e.target.value)}
-                        className="w-full p-1 border rounded text-sm bg-white"
+                        className={`w-full p-1 border rounded text-sm bg-white ${errors.medicoTratante ? 'border-red-500' : 'border-slate-300'}`}
                      >
                         <option value="" disabled>Seleccione un médico</option>
                         {staff.map(member => (
@@ -418,6 +438,7 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
                             </option>
                         ))}
                     </select>
+                    {errors.medicoTratante && <p className="text-red-500 text-xs mt-1">{errors.medicoTratante}</p>}
                 </div>
                 <TextInput label="SELLO" value={formData.sello} onChange={e => handleFieldChange('sello', e.target.value)} />
                 <TextInput label="20. Coordinador Regional de Programa SIDA/ITS (Nombre y Firma)" value={formData.coordinadorRegional} onChange={e => handleFieldChange('coordinadorRegional', e.target.value)} />
@@ -431,7 +452,11 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
           <DownloadIcon className="w-5 h-5 mr-2" />
           Descargar PDF
         </button>
-        <button onClick={handleSave} className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-800 transition">
+        <button 
+          onClick={handleSave} 
+          disabled={isSaveDisabled}
+          className="px-6 py-2 bg-brand-blue text-white font-semibold rounded-lg hover:bg-blue-800 transition disabled:bg-slate-400 disabled:cursor-not-allowed"
+        >
           Guardar Ficha
         </button>
       </div>
@@ -440,16 +465,18 @@ export default function InicioTratamiento({ patient, onSave, staff }: InicioTrat
 }
 
 // Helper Components
-const TextInput = ({ label, ...props }: {label: string; [key: string]: any}) => (
+const TextInput = ({ label, error, ...props }: {label: string; error?: string; [key: string]: any}) => (
     <div>
-        <label className="block font-medium text-slate-700 text-xs mb-1">{label}</label>
-        <input {...props} className="w-full p-1 border rounded text-sm" />
+        <label className={`block font-medium text-xs mb-1 ${error ? 'text-red-600' : 'text-slate-700'}`}>{label}</label>
+        <input {...props} className={`w-full p-1 border rounded text-sm ${error ? 'border-red-500' : 'border-slate-300'}`} />
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
 );
-const TextInputArea = ({ label, ...props }: {label: string; [key: string]: any}) => (
+const TextInputArea = ({ label, error, ...props }: {label: string; error?: string; [key: string]: any}) => (
     <div className="mt-2">
-        <label className="block font-medium text-slate-700 text-xs mb-1">{label}</label>
-        <textarea {...props} rows={2} className="w-full p-1 border rounded text-sm" />
+        <label className={`block font-medium text-xs mb-1 ${error ? 'text-red-600' : 'text-slate-700'}`}>{label}</label>
+        <textarea {...props} rows={2} className={`w-full p-1 border rounded text-sm ${error ? 'border-red-500' : 'border-slate-300'}`} />
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
 );
 const InfoDisplay = ({ label, value }: {label: string; value: string}) => (

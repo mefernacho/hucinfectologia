@@ -33,6 +33,7 @@ const generateLabSummary = (estudios: EstudiosData): string | null => {
 export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabled }: HistoriaClinicaSucesivaProps) {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(initialFormState);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const handleTriageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -61,10 +62,33 @@ export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabl
           initialState = { ...initialState, triage: patient.triage };
       }
       setFormData(initialState);
+      setErrors({});
       setShowForm(true);
   }
 
+  const validate = (): boolean => {
+      const newErrors: Record<string, string> = {};
+      if (!formData.evolucion.trim()) newErrors.evolucion = "La evolución es requerida.";
+      if (!formData.examenFisico.trim()) newErrors.examenFisico = "El examen físico es requerido.";
+      if (!formData.plan.trim()) newErrors.plan = "El plan es requerido.";
+
+      const isEvalSelected = !!formData.residente || !!formData.medicoEvaluadorId;
+      const isOnlyOneEval = !(!!formData.residente && !!formData.medicoEvaluadorId);
+
+      if (!isEvalSelected || !isOnlyOneEval) {
+          newErrors.evaluador = "Debe seleccionar un residente o un médico, pero no ambos.";
+      }
+
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+  }
+
   const handleSave = async () => {
+    if (!validate()) {
+        alert('Por favor, complete todos los campos requeridos en la nueva evaluación.');
+        return;
+    }
+
     const newEntry: SucesivaType = {
         id: new Date().toISOString(),
         fecha: new Date().toISOString(),
@@ -77,6 +101,7 @@ export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabl
     await onSave(updatedPatient);
     alert('Historia sucesiva guardada con éxito.');
     setFormData(initialFormState);
+    setErrors({});
     setShowForm(false);
   };
   
@@ -87,7 +112,10 @@ export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabl
       </div>
   );
 
-  const isSaveDisabled = !!formData.residente === !!formData.medicoEvaluadorId;
+  const isEvaluatorSelected = !!formData.residente || !!formData.medicoEvaluadorId;
+  const isOnlyOneEvaluator = !(!!formData.residente && !!formData.medicoEvaluadorId);
+  const isFormInvalid = !formData.evolucion.trim() || !formData.examenFisico.trim() || !formData.plan.trim();
+  const isSaveDisabled = isFormInvalid || !isEvaluatorSelected || !isOnlyOneEvaluator;
   
   if (disabled) {
     return (
@@ -132,9 +160,18 @@ export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabl
                         <TriageInput label="FR (rpm)" name="fr" type="number" placeholder="16" value={formData.triage.fr} />
                     </div>
                 </fieldset>
-                <textarea name="evolucion" value={formData.evolucion} onChange={handleTextChange} placeholder="Evolución y comentarios de la consulta actual..." rows={5} className="w-full p-2 border rounded-lg" />
-                <textarea name="examenFisico" value={formData.examenFisico} onChange={handleTextChange} placeholder="Examen físico de hoy..." rows={5} className="w-full p-2 border rounded-lg" />
-                <textarea name="plan" value={formData.plan} onChange={handleTextChange} placeholder="Plan a seguir..." rows={3} className="w-full p-2 border rounded-lg" />
+                <div>
+                    <textarea name="evolucion" value={formData.evolucion} onChange={handleTextChange} placeholder="Evolución y comentarios de la consulta actual..." rows={5} className={`w-full p-2 border rounded-lg ${errors.evolucion ? 'border-red-500 bg-red-50' : 'border-slate-300'}`} aria-invalid={!!errors.evolucion} aria-describedby={errors.evolucion ? 'evolucion-error' : undefined} />
+                    {errors.evolucion && <p id="evolucion-error" className="text-red-500 text-xs mt-1">{errors.evolucion}</p>}
+                </div>
+                <div>
+                    <textarea name="examenFisico" value={formData.examenFisico} onChange={handleTextChange} placeholder="Examen físico de hoy..." rows={5} className={`w-full p-2 border rounded-lg ${errors.examenFisico ? 'border-red-500 bg-red-50' : 'border-slate-300'}`} aria-invalid={!!errors.examenFisico} aria-describedby={errors.examenFisico ? 'examenFisico-error' : undefined} />
+                    {errors.examenFisico && <p id="examenFisico-error" className="text-red-500 text-xs mt-1">{errors.examenFisico}</p>}
+                </div>
+                <div>
+                    <textarea name="plan" value={formData.plan} onChange={handleTextChange} placeholder="Plan a seguir..." rows={3} className={`w-full p-2 border rounded-lg ${errors.plan ? 'border-red-500 bg-red-50' : 'border-slate-300'}`} aria-invalid={!!errors.plan} aria-describedby={errors.plan ? 'plan-error' : undefined} />
+                    {errors.plan && <p id="plan-error" className="text-red-500 text-xs mt-1">{errors.plan}</p>}
+                </div>
                  <fieldset className="border p-4 rounded-lg">
                     <legend className="text-lg font-semibold text-brand-gray px-2">Evaluación Médica</legend>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
@@ -174,6 +211,7 @@ export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabl
                             </select>
                         </div>
                     </div>
+                    {errors.evaluador && <p className="text-red-500 text-xs mt-2 text-center">{errors.evaluador}</p>}
                 </fieldset>
             </div>
             <div className="flex justify-end mt-6 space-x-4">
@@ -182,7 +220,7 @@ export default function HistoriaClinicaSucesiva({ patient, onSave, staff, disabl
                     onClick={handleSave} 
                     disabled={isSaveDisabled} 
                     className={`px-6 py-2 bg-brand-red text-white font-semibold rounded-lg transition ${isSaveDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-800'}`}
-                    title={isSaveDisabled ? 'Debe seleccionar un residente o un médico evaluador (solo uno).' : 'Guardar Entrada'}
+                    title={isSaveDisabled ? 'Debe completar todos los campos de texto y seleccionar un evaluador.' : 'Guardar Entrada'}
                 >
                     Guardar Entrada
                 </button>
