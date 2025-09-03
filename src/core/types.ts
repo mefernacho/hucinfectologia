@@ -244,10 +244,10 @@ export interface StaffMember {
   especialidad: string;
 }
 
-// FIX: Add ChatMessage type for the Chat component.
+export type Tab = 'Inicio' | 'Registro' | 'Triaje' | 'Historia Clinica de Primera' | 'Historia Clinica Sucesiva' | 'Inicio de tratamiento' | 'Cambio de TAR' | 'Embarazadas' | 'Laboratorios e Inmunizaciones' | 'Staff Médico' | 'Estadísticas';
+
+// FIX: Add ChatMessage interface for the chat component.
 export interface ChatMessage {
   role: 'user' | 'model';
-  parts: Array<{ text: string }>;
+  parts: { text: string }[];
 }
-
-export type Tab = 'Inicio' | 'Registro' | 'Triaje' | 'Historia Clinica de Primera' | 'Historia Clinica Sucesiva' | 'Inicio de tratamiento' | 'Cambio de TAR' | 'Embarazadas' | 'Laboratorios e Inmunizaciones' | 'Staff Médico' | 'Estadísticas';

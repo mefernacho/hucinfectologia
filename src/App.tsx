@@ -17,6 +17,8 @@ import Embarazadas from './components/views/Embarazadas';
 import Footer from './components/layout/Footer';
 import { PlusIcon } from './components/icons/PlusIcon';
 
+const API_BASE_URL = 'https://backend-api-511318369202.us-central1.run.app';
+
 export default function App() {
   const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false); // No longer loading from Firebase on init
@@ -34,11 +36,11 @@ export default function App() {
       // const fetchAllData = async () => {
       //   setIsLoading(true);
       //   try {
-      //     const patientsRes = await fetch('/api/patients');
+      //     const patientsRes = await fetch(`${API_BASE_URL}/api/patients`);
       //     const patientsData = await patientsRes.json();
       //     setPatients(patientsData);
       //
-      //     const staffRes = await fetch('/api/staff');
+      //     const staffRes = await fetch(`${API_BASE_URL}/api/staff`);
       //     const staffData = await staffRes.json();
       //     setStaff(staffData);
       //   } catch (error) {
@@ -63,17 +65,17 @@ export default function App() {
   };
   
   const addPatient = useCallback(async (patient: Patient) => {
-    // TODO: Reemplazar con una llamada a la API: fetch('/api/patients', { method: 'POST', body: JSON.stringify(patient) })
+    // TODO: Reemplazar con una llamada a la API: fetch(`${API_BASE_URL}/api/patients`, { method: 'POST', body: JSON.stringify(patient) })
     alert('Funcionalidad de agregar paciente deshabilitada durante la migración.');
   }, []);
   
   const updatePatient = useCallback(async (updatedPatient: Patient) => {
-    // TODO: Reemplazar con una llamada a la API: fetch(`/api/patients/${updatedPatient.id}`, { method: 'PUT', body: JSON.stringify(updatedPatient) })
+    // TODO: Reemplazar con una llamada a la API: fetch(`${API_BASE_URL}/api/patients/${updatedPatient.id}`, { method: 'PUT', body: JSON.stringify(updatedPatient) })
      alert('Funcionalidad de actualizar paciente deshabilitada durante la migración.');
   }, []);
 
   const addStaffMember = useCallback(async (staffMember: StaffMember) => {
-    // TODO: Reemplazar con una llamada a la API: fetch('/api/staff', { method: 'POST', body: JSON.stringify(staffMember) })
+    // TODO: Reemplazar con una llamada a la API: fetch(`${API_BASE_URL}/api/staff`, { method: 'POST', body: JSON.stringify(staffMember) })
      alert('Funcionalidad de agregar personal deshabilitada durante la migración.');
   }, []);
 
